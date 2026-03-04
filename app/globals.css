@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 216 36% 97%;
+    --foreground: 222 44% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 44% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 44% 11%;
+    --primary: 220 87% 55%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 32% 94%;
+    --secondary-foreground: 222 44% 11%;
+    --muted: 214 29% 92%;
+    --muted-foreground: 220 12% 41%;
+    --accent: 212 45% 91%;
+    --accent-foreground: 222 44% 11%;
+    --danger: 0 80% 57%;
+    --danger-foreground: 0 0% 98%;
+    --success: 155 70% 33%;
+    --success-foreground: 156 100% 95%;
+    --border: 218 26% 86%;
+    --input: 218 26% 86%;
+    --ring: 220 85% 60%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 224 35% 8%;
+    --foreground: 210 30% 94%;
+    --card: 223 30% 11%;
+    --card-foreground: 210 30% 94%;
+    --popover: 224 35% 8%;
+    --popover-foreground: 210 30% 94%;
+    --primary: 217 88% 66%;
+    --primary-foreground: 224 46% 10%;
+    --secondary: 223 24% 16%;
+    --secondary-foreground: 210 30% 94%;
+    --muted: 224 19% 18%;
+    --muted-foreground: 217 17% 67%;
+    --accent: 223 24% 16%;
+    --accent-foreground: 210 30% 94%;
+    --danger: 0 72% 58%;
+    --danger-foreground: 0 0% 98%;
+    --success: 158 70% 43%;
+    --success-foreground: 0 0% 98%;
+    --border: 223 22% 24%;
+    --input: 223 22% 24%;
+    --ring: 217 88% 66%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at 16% -8%, hsl(var(--primary) / 0.12), transparent 38%),
+      radial-gradient(circle at 88% 0%, hsl(var(--success) / 0.08), transparent 33%);
+    background-attachment: fixed;
+    line-height: 1.45;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.2);
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer components {
+  .mermaid-diagram svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@layer utilities {
+  .scrollbar-subtle {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
