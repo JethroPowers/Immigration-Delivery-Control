@@ -13,7 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Immigration Delivery Control",
   description:
-    "Operational control layer for UK immigration teams managing extensions to ILR, focused on deadline risk, evidence readiness, and auditability."
+    "Delivery acceleration overlay for UK immigration teams managing in-country extensions to ILR, focused on faster submission readiness and reduced document chasing."
 };
 
 export default function RootLayout({
