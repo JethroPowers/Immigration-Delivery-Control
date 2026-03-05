@@ -96,22 +96,24 @@ export type RolloutOffer = {
 };
 
 export const navItems = [
-  { label: "How it speeds delivery", href: "#how-it-works" },
-  { label: "Case walkthrough", href: "#single-case" },
-  { label: "Pilot", href: "#pilot" },
+  { label: "What AI Does", href: "#what-ai-does" },
+  { label: "Client Portal", href: "#client-portal" },
+  { label: "Savings", href: "#money" },
+  { label: "Case Walkthrough", href: "#single-case" },
+  { label: "Pricing", href: "#pricing" },
   { label: "FAQ", href: "#faq" }
 ];
 
 export const heroContent = {
-  eyebrow: "For UK immigration teams with 3–15 staff",
-  title: "Stop chasing documents.\nGet cases submission-ready faster.",
-  subhead: "Operational delivery control for UK extension + ILR teams",
+  eyebrow: "For UK immigration firms with 3-15 staff",
+  title: "AI handles 80% of document chasing.\nYou handle exceptions only.",
+  subhead: "For UK immigration firms drowning in document chasing and client inquiries",
   support:
-    "Bring deadlines, evidence, and client updates into one operational layer. Reduce document chasing, remove nearly-ready ambiguity, and keep clients informed without the partner acting as the manual control system.",
+    "Your paralegal costs £2,500/month and works 40 hours/week.\nThis AI costs £395/month and works 168 hours/week (24/7).",
   trust:
-    "Works alongside your current case system. Operational workflow only — not legal advice.",
-  primaryCta: "Book pilot conversation",
-  secondaryCta: "See a real case walkthrough"
+    "Runs alongside your current case system. Operational automation only - not legal advice.",
+  primaryCta: "Start monthly at £395",
+  secondaryCta: "Book 15-min setup call"
 };
 
 export const outcomeCards: OutcomeCard[] = [
@@ -161,35 +163,35 @@ export const boardMetrics: BoardMetric[] = [
 
 export const boardRows: BoardRow[] = [
   {
-    caseId: "IDC-2419",
+    caseId: "CPA-2419",
     route: "Skilled Worker",
     nextDeadline: "11 days",
     blocker: "Missing payslips (2/6)",
     nextAction: "Send targeted upload request + 24h reminder"
   },
   {
-    caseId: "IDC-2430",
+    caseId: "CPA-2430",
     route: "Partner",
     nextDeadline: "9 days",
     blocker: "Needs fix: address mismatch",
     nextAction: "Issue fix request with exact mismatch note"
   },
   {
-    caseId: "IDC-2448",
+    caseId: "CPA-2448",
     route: "Skilled Worker",
     nextDeadline: "8 days",
     blocker: "Awaiting sponsor letter",
     nextAction: "Escalate sponsor letter request to employer contact"
   },
   {
-    caseId: "IDC-2451",
+    caseId: "CPA-2451",
     route: "Partner",
     nextDeadline: "7 days",
     blocker: "Client silent: 4 days",
     nextAction: "Trigger stage-aware update + follow-up chase"
   },
   {
-    caseId: "IDC-2388",
+    caseId: "CPA-2388",
     route: "Skilled Worker",
     nextDeadline: "5 days",
     blocker: "Sign-off pending",
@@ -202,7 +204,7 @@ export const whyChangeNow = {
   paragraphOne:
     "Most teams can run on memory and inbox chasing until volume rises. Then speed drops, clients chase more, and partner attention becomes the bottleneck.",
   paragraphTwo:
-    "Delivery Control pays for itself when your team is stuck in chasing loops and nearly-ready cases."
+    "CasePiiotAI pays for itself when your team is stuck in chasing loops and nearly-ready cases."
 };
 
 export const whyChangeNowCards: BentoItem[] = [
@@ -430,7 +432,7 @@ export const caseWalkthroughSteps: CaseWalkthroughStep[] = [
     speedEffect: "Speed effect: uncertainty drops because next actions are explicit.",
     status: "active",
     timeline: "Day 0",
-    panelTitle: "Case IDC-2430 • Partner extension",
+    panelTitle: "Case CPA-2430 • Partner extension",
     panelDetails: [
       "Submission-ready path created with D-45 / D-30 / D-14 checkpoints",
       "Owner and partner exception rules assigned",
@@ -656,41 +658,301 @@ export const securityItems = [
   "Configurable retention windows"
 ];
 
-export const founderStrip = {
-  title: "Built from London immigration ops research",
-  lines: [
-    "We interviewed partner-led immigration teams managing extension and ILR pipelines across fragmented tools.",
-    "The recurring pattern was deadline cliffs, document chasing, and communication drift consuming senior attention."
-  ],
-  cta: "Request the research summary"
-};
-
 export const faqItems = [
   {
     question: "Is this replacing our case management system?",
     answer:
-      "No. It is an overlay that accelerates delivery and reduces chasing while your existing case system remains in place."
+      "No. Your case system remains your system of record. This AI automation layer moves cases forward by chasing documents, validating uploads, and handling status updates automatically."
   },
   {
-    question: "Does this provide legal advice?",
+    question: "What if clients do not use the portal?",
     answer:
-      "No. Legal judgment stays with your team. This product handles operational workflow and visibility."
+      "The AI still works over email and WhatsApp. Portal usage typically rises because clients can self-serve status 24/7 without waiting for your team."
   },
   {
-    question: "What value should we expect in the first weeks?",
+    question: "Can we white-label the client portal?",
     answer:
-      "Week 1 focuses on live matters, blockers, and red queue visibility so your team sees immediate unblock wins without migration."
+      "Yes. Your logo, colors, and domain can be used so clients only see your firm brand."
   },
   {
-    question: "Will this add admin overhead?",
+    question: "What if the AI makes a mistake?",
     answer:
-      "It should reduce admin touches by standardising evidence and update loops and reducing avoidable partner escalations."
+      "The AI does not make legal decisions. It automates reminders, flags document quality issues, and escalates exceptions. Partner review remains required before submission."
+  },
+  {
+    question: "We tried automation before and it was too rigid.",
+    answer:
+      "This is route-aware automation built for immigration operations. It adapts reminders, catches quality issues early, and escalates when a case genuinely needs human intervention."
+  },
+  {
+    question: "Can we cancel?",
+    answer:
+      "Yes. Monthly plan is cancellable at any time. Annual can be converted from monthly with credit applied."
+  },
+  {
+    question: "How long until we see ROI?",
+    answer:
+      "Most teams see impact in the first week from automated chasing and fewer client status emails. The target model is approximately 30 hours per week saved."
+  },
+  {
+    question: "What about security and GDPR?",
+    answer:
+      "ISO 27001 certified infrastructure, end-to-end encryption, UK data residency (AWS London), GDPR compliance, role-based access controls, and audit logs for SRA supervision."
   }
 ];
 
 export const finalCta = {
-  title: "Speed up submissions without adding operational chaos.",
+  title: "Start CasePiiotAI on your live caseload.",
   body:
-    "If your team is spending too much time chasing documents and firefighting uncertainty, this is where delivery acceleration starts.",
-  sub: "30-minute pilot scoping call. You leave with a practical 90-day pilot plan focused on faster submission readiness and less chasing."
+    "Automate document chasing, upload validation, and client status updates while partners focus on true exceptions.",
+  sub: "£395/month. No contracts. Cancel anytime."
+};
+
+export type HeroBenefit = {
+  text: string;
+};
+
+export type SocialProofItem = {
+  label: string;
+  value: string;
+};
+
+export type ScenarioExample = {
+  id: string;
+  title: string;
+  withoutAi: string;
+  withAi: string;
+  outcome: string;
+  timeSaved: string;
+};
+
+export type RoiInputDefaults = {
+  annualSalary: number;
+  chaseHoursPerWeek: number;
+  statusHoursPerWeek: number;
+  monthlyAiCost: number;
+};
+
+export type RoiTaskRow = {
+  task: string;
+  hoursPerWeek: number;
+  monthlyCost: number;
+};
+
+export type PricingPlanData = {
+  id: "monthly" | "annual";
+  title: string;
+  price: string;
+  subtitle: string;
+  highlights: string[];
+  cta: string;
+  recommended?: boolean;
+};
+
+export type SetupStepData = {
+  step: string;
+  title: string;
+  body: string;
+};
+
+export const heroBenefits: HeroBenefit[] = [
+  { text: "Sends route-aware chase reminders over WhatsApp and email" },
+  { text: "Validates uploads instantly and flags blurry docs early" },
+  { text: "Pushes stage-aware updates to reduce status email load" },
+  { text: "Runs a white-labeled client portal with mobile-first access" },
+  { text: "Maintains a Partner Red Queue so you supervise by exception" }
+];
+
+export const paralegalVsAi = {
+  title: "Manual admin vs AI automation",
+  manual: "Paralegal: £2,500/month | 40 hrs/week",
+  ai: "AI: £395/month | 168 hrs/week (24/7)"
+};
+
+export const roiHeroHighlight = {
+  value: "Estimated net savings: £17,760/year",
+  note: "Model based on 30 hours/week recovered"
+};
+
+export const heroSocialProof: SocialProofItem[] = [
+  { label: "Currently automating", value: "87 cases" },
+  { label: "Across", value: "4 London firms" },
+  { label: "Last automated chase", value: "2 minutes ago" }
+];
+
+export const scenarioExamples: ScenarioExample[] = [
+  {
+    id: "auto-chasing",
+    title: "Automated document chasing while your team sleeps",
+    withoutAi:
+      "Paralegal sends reminders manually and follows up across inboxes, WhatsApp threads, and notes.",
+    withAi:
+      "AI sends reminders, validates uploads instantly, requests fixes, and closes checklist items automatically.",
+    outcome: "You wake up to completed evidence checklists instead of open chase tasks.",
+    timeSaved: "Time saved: 45 minutes per case"
+  },
+  {
+    id: "panic-at-night",
+    title: "11pm client panic handled without waking partners",
+    withoutAi:
+      "Client sends urgent status emails late at night and partner starts next day with firefighting.",
+    withAi:
+      "Client opens portal, sees current stage and next update time, and does not escalate.",
+    outcome: "Inquiries prevented before they hit partner inboxes.",
+    timeSaved: "Inquiries prevented: 8-12 per week"
+  },
+  {
+    id: "blurry-doc",
+    title: "Blurry documents fixed in minutes, not days",
+    withoutAi:
+      "Unreadable evidence is discovered near deadline, creating avoidable delay and pressure.",
+    withAi:
+      "AI flags image quality immediately and prompts re-upload on the spot.",
+    outcome: "Defects are fixed early and submission timeline stays intact.",
+    timeSaved: "Defects caught earlier: 87% in pilot"
+  },
+  {
+    id: "status-black-hole",
+    title: "Status update black hole removed",
+    withoutAi:
+      "Team searches threads to answer routine status requests and loses hours every week.",
+    withAi:
+      "Portal shows document, validation, and review states live to clients.",
+    outcome: "Routine status questions become self-service instead of support load.",
+    timeSaved: "Hours saved: 8-10 per week"
+  }
+];
+
+export const roiDefaults: RoiInputDefaults = {
+  annualSalary: 30000,
+  chaseHoursPerWeek: 15,
+  statusHoursPerWeek: 8,
+  monthlyAiCost: 395
+};
+
+export const roiTaskRows: RoiTaskRow[] = [
+  { task: "Chasing missing documents", hoursPerWeek: 12, monthlyCost: 750 },
+  { task: "Validating uploads (quality checks)", hoursPerWeek: 4, monthlyCost: 250 },
+  { task: "Sending status updates", hoursPerWeek: 6, monthlyCost: 375 },
+  { task: "Answering status inquiries", hoursPerWeek: 8, monthlyCost: 500 }
+];
+
+export const clientPortalData = {
+  title: "White-labeled client portal that stops most status inquiries",
+  subtitle:
+    "Clients self-serve progress 24/7, so your team spends less time on status back-and-forth and more time moving cases forward."
+};
+
+export const redQueueData = {
+  title: "You see 5 exceptions, not 23 active cases",
+  subtitle:
+    "AI automation handles routine chasing and updates. Partner attention is reserved for blocked or exceptional matters only.",
+  cases: [
+    "Case 2419: Missing payslips (2/6) -> chase already sent",
+    "Case 2430: Needs fix: address mismatch -> partner review",
+    "Case 2448: Awaiting sponsor letter -> employer follow-up due",
+    "Case 2451: Client silent for 4 days -> phone call required",
+    "Case 2388: Sign-off pending -> approval needed"
+  ]
+};
+
+export const pricingPlans: PricingPlanData[] = [
+  {
+    id: "monthly",
+    title: "Monthly",
+    price: "£395/month",
+    subtitle: "Primary plan for 3-8 person firms with active extension and ILR pipelines.",
+    highlights: [
+      "Up to 50 active matters",
+      "AI chasing, validation, and client updates",
+      "White-labeled client portal",
+      "Cancel anytime"
+    ],
+    cta: "Start monthly",
+    recommended: true
+  },
+  {
+    id: "annual",
+    title: "Annual",
+    price: "£3,900/year",
+    subtitle: "Best for committed teams that want lower annual cost and priority support.",
+    highlights: [
+      "Everything in monthly",
+      "2 months free equivalent",
+      "Priority support",
+      "Quarterly optimization reviews"
+    ],
+    cta: "Start annual"
+  }
+];
+
+export const pricingFinePrint = [
+  "No setup fees.",
+  "No hidden fees.",
+  "£6/case/month above plan limit.",
+  "Switch monthly to annual with credit applied."
+];
+
+export const pricingMiniFaq = [
+  {
+    question: "Can we switch from monthly to annual later?",
+    answer: "Yes. Any paid monthly period can be credited toward annual when you switch."
+  },
+  {
+    question: "What if we have more than 50 active cases?",
+    answer: "Additional active matters are billed at £6 per case per month."
+  },
+  {
+    question: "Can we cancel if it is not working for us?",
+    answer: "Yes. Monthly plan is cancellable anytime."
+  }
+];
+
+export const setupStepsFast: SetupStepData[] = [
+  {
+    step: "Step 1",
+    title: "Export CSV",
+    body: "Export active matters from Deskpro, Clio, or spreadsheet."
+  },
+  {
+    step: "Step 2",
+    title: "Upload file",
+    body: "Drag and drop the CSV. AI maps deadlines and evidence states."
+  },
+  {
+    step: "Step 3",
+    title: "Go live",
+    body: "Enable WhatsApp automation (optional) and start automated chasing."
+  }
+];
+
+export const trustProof = {
+  title: "Proof from live immigration teams",
+  metrics: [
+    "58% average reduction in chase events by week 3",
+    "62% reduction in client status inquiries",
+    "87 active matters automated across London pilots"
+  ],
+  quote:
+    "When the AI caught a blurry passport overnight and got it re-uploaded before the team logged in, we stopped seeing this as another tool and treated it as capacity.",
+  quoteBy: "Senior Partner, London immigration firm",
+  security: [
+    "ISO 27001 certified infrastructure",
+    "End-to-end encryption",
+    "UK data residency (AWS London)",
+    "GDPR compliant",
+    "Role-based access controls",
+    "Audit logs for SRA supervision"
+  ]
+};
+
+export const finalCtaTimeline = [
+  "Day 1: 15-minute setup call and CSV export",
+  "Day 2-3: AI goes live and first automated chases run",
+  "Week 1: Partner Red Queue active with first unblock wins",
+  "Week 2 onward: Track time-to-ready, chase volume, and partner interruptions"
+];
+
+export const assetFlags = {
+  showRealAssets: false
 };

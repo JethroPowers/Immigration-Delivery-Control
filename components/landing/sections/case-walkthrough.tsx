@@ -41,7 +41,7 @@ export function CaseWalkthrough() {
     <SectionShell
       id="single-case"
       title="A single case, end-to-end"
-      subtitle="Every stage is explicit, and each stage has a speed effect so the team can move with fewer chases."
+      subtitle="CasePiiotAI makes each stage explicit, so your team moves faster with fewer chase loops and fewer partner escalations."
     >
       <div ref={sectionRef} className="relative">
         <div className="mb-5 rounded-full border border-border/70 bg-muted/40 p-1">
