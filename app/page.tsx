@@ -10,79 +10,32 @@ import {
 } from 'framer-motion'
 import {
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
-  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react'
 
-type DiagramRouteTone = 'base' | 'success' | 'alert' | 'loop'
-type DiagramNodeKind =
-  | 'actor'
-  | 'system'
-  | 'gate'
-  | 'exception'
-  | 'output'
-  | 'state'
+type FlowTone = 'neutral' | 'verified' | 'exception' | 'manual'
 
-type DiagramLane = {
-  id: string
-  label: string
-  detail: string
-  x: number
-  width: number
-}
-
-type DiagramMark = {
-  id: string
-  text: string
-  x: number
-  y: number
-  tone?: DiagramRouteTone
-}
-
-type DiagramPacket = {
-  label: string
-  delay: number
-  duration?: number
-}
-
-type DiagramRoute = {
-  id: string
-  d: string
-  label: string
-  labelX: number
-  labelY: number
-  tooltip: string
-  tone: DiagramRouteTone
-  packet?: DiagramPacket
-}
-
-type DiagramNode = {
-  id: string
-  x: number
-  y: number
-  width: number
-  height: number
-  lane: string
-  kind: DiagramNodeKind
+type FlowStep = {
   chip?: string
   label: string
   detail?: string
-  tooltip: string
-  pathIds: string[]
+  tone?: FlowTone
 }
 
-type DiagramConfig = {
-  id: string
-  viewBox: string
-  lanes: DiagramLane[]
-  nodes: DiagramNode[]
-  routes: DiagramRoute[]
-  marks?: DiagramMark[]
-  notes?: string[]
+type FlowBranch = {
+  title: string
+  detail: string
+  steps: FlowStep[]
+  tone?: FlowTone
+}
+
+type TimelineStep = {
+  label: string
+  chip?: string
+  tone?: FlowTone
 }
 
 type TimelineStage = {
@@ -90,46 +43,23 @@ type TimelineStage = {
   title: string
   detail: string
   chip: string
-  board: DiagramConfig
+  steps: TimelineStep[]
 }
 
 const smoothEase: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
-const heroProof = [
-  {
-    label: 'Cases automated',
-    value: '87',
-    detail: 'Across route-aware document chase loops',
-  },
-  {
-    label: 'London firms live',
-    value: '4',
-    detail: 'Partner-led immigration practices in production',
-  },
-  {
-    label: 'Status inquiries removed',
-    value: '62%',
-    detail: 'Measured reduction in ad-hoc client check-ins',
-  },
-  {
-    label: 'Flat monthly price',
-    value: 'GBP 395',
-    detail: 'Transparent base plan with visible overage only',
-  },
-]
-
 const problemCards = [
   {
-    title: 'Knowledge trapped in channels',
-    body: 'Evidence requests fragment across email, WhatsApp, and partner memory, so ownership changes case by case.',
+    title: 'Document chasing lives in too many places',
+    body: 'Evidence requests end up split across email, WhatsApp, and whoever last touched the case.',
   },
   {
-    title: 'Validation happens too late',
-    body: 'Teams discover blurry passports and route mismatches after avoidable back-and-forth, not at the gate.',
+    title: 'Bad uploads get found too late',
+    body: 'Blurry passports, wrong files, and missing evidence are often spotted after avoidable back-and-forth.',
   },
   {
-    title: 'Clients ask for updates because the system does not',
-    body: 'Without a status cadence, partners become the message bus for routine waiting-state questions.',
+    title: 'Routine updates still come from fee-earners',
+    body: 'When no system sends updates automatically, partners and paralegals end up replying to the same questions all week.',
   },
 ]
 
@@ -137,985 +67,324 @@ const faqItems = [
   {
     question: 'How fast can we deploy?',
     answer:
-      'Most firms deploy in under 5 minutes. We connect the case system, define validation rules, and switch on the chase loop.',
+      'Most firms are live in around 5 working days. We connect your case system, configure the upload rules, and turn on the chasing and update flows without changing your existing setup.',
   },
   {
     question: 'Does this replace my case management tool?',
     answer:
-      'No. CasePilotAI sits between your case system and your clients. The product enforces validation, exception routing, and status cadence on top of the system you already use.',
+      'No. CasePilotAI works alongside the case management system you already use. It handles the chasing, upload checks, and routine client updates around it.',
   },
   {
     question: 'What counts as an exception?',
     answer:
-      'Any case that fails a validation rule, misses a required document, or triggers a firm-specific escalation rule. Those cases move into the Partner Red Queue.',
+      'Any case with missing evidence, a failed upload check, or something your firm wants reviewed by a senior person. Those are the cases sent to the Partner Red Queue.',
   },
   {
     question: 'How is pricing structured?',
     answer:
-      'GBP 395 per month covers up to 50 active cases. If the portfolio goes above that, overage is added at a visible per-case rate so the spend remains predictable.',
+      'GBP 395 per month covers up to 50 active cases. If you go above that, we add a clear per-case overage so the monthly cost stays predictable.',
   },
   {
     question: 'What about security and auditability?',
     answer:
-      'Every upload, validation result, chase, and status update is logged. Firms retain an audit trail for what was requested, what was uploaded, what failed, and what progressed.',
+      'Every upload, chase, failed check, and status update is logged, so your team can see what was requested, what was uploaded, and what happened next.',
   },
 ]
 
 const redQueueExceptions = [
   {
+    id: 'case-02',
     title: 'Case 02',
     reason: 'Passport upload failed minimum resolution threshold.',
+    action: 'Request a corrected passport image before submission review continues.',
   },
   {
+    id: 'case-05',
     title: 'Case 05',
     reason: 'Address evidence does not match the current route record.',
+    action: 'Confirm the current address trail and replace the mismatched evidence file.',
   },
   {
+    id: 'case-09',
     title: 'Case 09',
     reason: 'Sponsor income evidence missing a required month in sequence.',
+    action: 'Collect the missing payslip month before the bundle can return to routine flow.',
   },
   {
+    id: 'case-16',
     title: 'Case 16',
     reason: 'BRP expiry date conflicts with the submitted status history.',
+    action: 'Check the status timeline and resolve the date conflict before filing.',
   },
   {
+    id: 'case-20',
     title: 'Case 20',
     reason: 'Bank statement requires translation before submission-ready state.',
+    action: 'Obtain the translation and re-run the validation gate.',
   },
 ]
 
-const heroBoard: DiagramConfig = {
-  id: 'hero-board',
-  viewBox: '0 0 920 560',
-  lanes: [
+const redQueuePortfolio = Array.from({ length: 23 }, (_, index) => {
+  const caseNumber = String(index + 1).padStart(2, '0')
+  const title = `Case ${caseNumber}`
+  const route = [
+    'Skilled Worker',
+    'Spouse',
+    'Graduate',
+    'ILR',
+    'Visitor',
+  ][index % 5]
+  const exception = redQueueExceptions.find((item) => item.title === title)
+
+  return {
+    id: `case-${caseNumber}`,
+    title,
+    route,
+    status: exception ? ('exception' as const) : ('routine' as const),
+    summary: exception ? 'Needs partner review' : 'Routine flow',
+  }
+})
+
+const heroMainSteps: FlowStep[] = [
+  {
+    chip: 'INPUT',
+    label: 'Client upload',
+    detail: 'Secure evidence link opens the chase path',
+  },
+  {
+    chip: 'GATE',
+    label: 'Validation gate',
+    detail: 'Route rules and quality checks run before review',
+  },
+  {
+    chip: 'READY',
+    label: 'Submission-ready',
+    detail: 'Validated evidence bundle is complete',
+    tone: 'verified',
+  },
+  {
+    chip: 'SYNC',
+    label: 'Case system sync',
+    detail: 'Audit trail and case record update',
+    tone: 'verified',
+  },
+  {
+    chip: 'STATUS',
+    label: 'Client status cadence',
+    detail: 'Waiting-state updates go out automatically',
+    tone: 'verified',
+  },
+]
+
+const heroCorrectionBranch: FlowBranch = {
+  title: 'Correction loop',
+  detail:
+    'If a file fails the gate, the client receives a specific correction request and the same rules run again on re-upload.',
+  tone: 'exception',
+  steps: [
     {
-      id: 'client',
-      label: 'Client',
-      detail: 'Uploads and re-uploads',
-      x: 30,
-      width: 220,
-    },
-    {
-      id: 'automation',
-      label: 'CasePilotAI automation layer',
-      detail: 'Validation and routing',
-      x: 280,
-      width: 300,
-    },
-    {
-      id: 'firm',
-      label: 'Firm operations',
-      detail: 'Exceptions and system sync',
-      x: 610,
-      width: 280,
-    },
-  ],
-  marks: [
-    {
-      id: 'hero-mark-1',
-      text: 'Exception branch only',
-      x: 582,
-      y: 128,
-      tone: 'alert',
-    },
-    {
-      id: 'hero-mark-2',
-      text: 'Validated bundles continue automatically',
-      x: 570,
-      y: 450,
-      tone: 'success',
-    },
-  ],
-  routes: [
-    {
-      id: 'hero-upload',
-      d: 'M230 142 H330',
-      label: 'passport upload',
-      labelX: 246,
-      labelY: 122,
-      tooltip: 'Clients upload evidence through one secure link instead of sending files into scattered channels.',
-      tone: 'base',
-      packet: { label: 'Passport', delay: 0, duration: 5.4 },
-    },
-    {
-      id: 'hero-fail',
-      d: 'M440 188 V250',
-      label: 'defect found',
-      labelX: 454,
-      labelY: 230,
-      tooltip: 'If a file fails quality or route rules, the case enters the needs-fix loop immediately.',
-      tone: 'alert',
-      packet: { label: 'Blur alert', delay: 0.35, duration: 4.8 },
-    },
-    {
-      id: 'hero-request',
-      d: 'M330 294 H248 V401 H230',
-      label: 're-upload request',
-      labelX: 204,
-      labelY: 332,
-      tooltip: 'CasePilotAI sends a defect-specific request with the exact evidence needed for correction.',
-      tone: 'loop',
-      packet: { label: 'Fix request', delay: 0.65, duration: 6 },
-    },
-    {
-      id: 'hero-return',
-      d: 'M230 401 H248 V444 H330',
-      label: 'bank statement',
-      labelX: 208,
-      labelY: 474,
-      tooltip: 'Corrected evidence returns to the validation gate without partner intervention.',
-      tone: 'loop',
-      packet: { label: 'Bank stmt', delay: 1.15, duration: 6.2 },
-    },
-    {
-      id: 'hero-ready',
-      d: 'M550 444 H650',
-      label: 'submission-ready',
-      labelX: 578,
-      labelY: 424,
-      tooltip: 'Once validation passes, the case becomes submission-ready and progresses automatically.',
-      tone: 'success',
-      packet: { label: 'Validated set', delay: 1.35, duration: 5.2 },
-    },
-    {
-      id: 'hero-exception',
-      d: 'M550 144 H650',
-      label: 'partner review',
-      labelX: 576,
-      labelY: 124,
-      tooltip: 'Only exception cases branch into the Partner Red Queue for partner review.',
-      tone: 'alert',
-      packet: { label: 'Exception', delay: 1.55, duration: 5.5 },
-    },
-    {
-      id: 'hero-sync',
-      d: 'M745 180 V280',
-      label: 'cleared and synced',
-      labelX: 758,
-      labelY: 232,
-      tooltip: 'Once a partner clears an exception, the case rejoins the automated flow and syncs to the case record.',
-      tone: 'base',
-    },
-    {
-      id: 'hero-cadence',
-      d: 'M745 370 V430',
-      label: 'status cadence',
-      labelX: 760,
-      labelY: 410,
-      tooltip: 'Clients receive scheduled waiting-state updates without the team acting as a manual message relay.',
-      tone: 'success',
-      packet: { label: 'Status update', delay: 1.85, duration: 5.8 },
-    },
-  ],
-  nodes: [
-    {
-      id: 'hero-upload-node',
-      x: 60,
-      y: 100,
-      width: 170,
-      height: 84,
-      lane: 'client',
-      kind: 'actor',
-      chip: 'INPUT',
-      label: 'Client upload',
-      detail: 'Secure evidence link',
-      tooltip: 'Upload links centralize intake and remove the need for ad-hoc file chasing.',
-      pathIds: ['hero-upload'],
-    },
-    {
-      id: 'hero-validation-node',
-      x: 330,
-      y: 100,
-      width: 220,
-      height: 88,
-      lane: 'automation',
-      kind: 'gate',
-      chip: 'GATE',
-      label: 'Validation gate',
-      detail: 'Route rules and quality checks',
-      tooltip: 'Validation enforces completeness, legibility, and route fit before the team sees the case.',
-      pathIds: ['hero-upload', 'hero-fail', 'hero-exception'],
-    },
-    {
-      id: 'hero-fix-node',
-      x: 330,
-      y: 250,
-      width: 220,
-      height: 88,
-      lane: 'automation',
-      kind: 'state',
       chip: 'LOOP',
       label: 'Needs-fix loop',
-      detail: 'Defect detail and re-upload request',
-      tooltip: 'The correction loop keeps the defect attached to the case until the right file returns.',
-      pathIds: ['hero-fail', 'hero-request'],
+      detail: 'Defect reason issued automatically',
+      tone: 'exception',
     },
     {
-      id: 'hero-reupload-node',
-      x: 60,
-      y: 360,
-      width: 170,
-      height: 84,
-      lane: 'client',
-      kind: 'actor',
-      chip: 'RESPONSE',
+      chip: 'RE-UPLOAD',
       label: 'Client re-upload',
       detail: 'Corrected evidence only',
-      tooltip: 'Clients are told exactly what to fix, reducing partner-led clarification loops.',
-      pathIds: ['hero-request', 'hero-return'],
     },
     {
-      id: 'hero-ready-node',
-      x: 330,
-      y: 400,
-      width: 220,
-      height: 88,
-      lane: 'automation',
-      kind: 'system',
-      chip: 'READY',
-      label: 'Submission-ready',
-      detail: 'Validated bundle complete',
-      tooltip: 'Validated evidence is now complete enough to advance without more routine human checking.',
-      pathIds: ['hero-return', 'hero-ready'],
+      chip: 'RE-CHECK',
+      label: 'Validation runs again',
+      detail: 'Same gate, same route, no manual reset',
+      tone: 'verified',
     },
-    {
-      id: 'hero-queue-node',
-      x: 650,
-      y: 90,
-      width: 190,
-      height: 90,
-      lane: 'firm',
-      kind: 'exception',
-      chip: 'EXCEPTION',
-      label: 'Partner Red Queue',
-      detail: 'Only risk cases surface',
-      tooltip: 'Partners see exception cases only, not the routine portfolio.',
-      pathIds: ['hero-exception', 'hero-sync'],
-    },
-    {
-      id: 'hero-sync-node',
-      x: 650,
-      y: 280,
-      width: 190,
-      height: 90,
-      lane: 'firm',
-      kind: 'output',
-      chip: 'SYNC',
-      label: 'Case system sync',
-      detail: 'Audit trail and case record update',
-      tooltip: 'Every validated or cleared case writes back into the firm system with a traceable record.',
-      pathIds: ['hero-ready', 'hero-sync', 'hero-cadence'],
-    },
-    {
-      id: 'hero-cadence-node',
-      x: 650,
-      y: 430,
-      width: 190,
-      height: 88,
-      lane: 'firm',
-      kind: 'output',
-      chip: 'STATUS',
-      label: 'Client status cadence',
-      detail: 'Waiting-state updates sent automatically',
-      tooltip: 'Status cadence removes routine "any update?" traffic from partner inboxes.',
-      pathIds: ['hero-cadence'],
-    },
-  ],
-  notes: [
-    'Partner intervention occurs only on exception.',
-    'Each document keeps its validation state and audit trail.',
   ],
 }
 
-const portfolioBoard: DiagramConfig = {
-  id: 'portfolio-board',
-  viewBox: '0 0 980 280',
-  lanes: [
+const heroExceptionBranch: FlowBranch = {
+  title: 'Partner exception branch',
+  detail:
+    'Only cases with genuine risk, missing evidence, or route conflicts surface for partner attention.',
+  tone: 'exception',
+  steps: [
     {
-      id: 'portfolio',
-      label: 'Portfolio',
-      detail: 'Active live cases',
-      x: 30,
-      width: 200,
-    },
-    {
-      id: 'filter',
-      label: 'CasePilotAI filter',
-      detail: 'Rules and triage',
-      x: 260,
-      width: 220,
-    },
-    {
-      id: 'routine',
-      label: 'Routine flow',
-      detail: 'Auto-progressed cases',
-      x: 510,
-      width: 210,
-    },
-    {
-      id: 'partner',
-      label: 'Partner queue',
-      detail: 'Exception-only review',
-      x: 750,
-      width: 200,
-    },
-  ],
-  routes: [
-    {
-      id: 'portfolio-ingress',
-      d: 'M220 145 H330',
-      label: '23 active matters',
-      labelX: 244,
-      labelY: 126,
-      tooltip: 'The full live portfolio enters the triage layer rather than being worked case by case from memory.',
-      tone: 'base',
-      packet: { label: '23 cases', delay: 0.1, duration: 5.8 },
-    },
-    {
-      id: 'portfolio-routine',
-      d: 'M550 110 H670',
-      label: '18 routine',
-      labelX: 582,
-      labelY: 92,
-      tooltip: 'Routine cases stay in the automated path and do not consume partner attention.',
-      tone: 'success',
-      packet: { label: 'Routine', delay: 0.55, duration: 5.2 },
-    },
-    {
-      id: 'portfolio-exception',
-      d: 'M550 180 H790',
-      label: '5 exceptions',
-      labelX: 620,
-      labelY: 205,
-      tooltip: 'Only five cases with actual risk move into the Partner Red Queue.',
-      tone: 'alert',
-      packet: { label: 'Exceptions', delay: 0.95, duration: 5.2 },
-    },
-  ],
-  nodes: [
-    {
-      id: 'portfolio-cases',
-      x: 50,
-      y: 100,
-      width: 170,
-      height: 88,
-      lane: 'portfolio',
-      kind: 'actor',
-      chip: 'PORTFOLIO',
-      label: 'All live cases',
-      detail: '23 active immigration matters',
-      tooltip: 'The portfolio is treated as a system, not as disconnected partner-held threads.',
-      pathIds: ['portfolio-ingress'],
-    },
-    {
-      id: 'portfolio-filter-node',
-      x: 330,
-      y: 100,
-      width: 220,
-      height: 88,
-      lane: 'filter',
-      kind: 'system',
-      chip: 'FILTER',
-      label: 'AI filter',
-      detail: 'Routine vs exception split',
-      tooltip: 'Triage separates routine work from cases that need bespoke judgement.',
-      pathIds: ['portfolio-ingress', 'portfolio-routine', 'portfolio-exception'],
-    },
-    {
-      id: 'portfolio-routine-node',
-      x: 670,
-      y: 60,
-      width: 230,
-      height: 84,
-      lane: 'routine',
-      kind: 'output',
-      chip: 'ROUTINE',
-      label: 'Auto-handled cases',
-      detail: 'Filed, chased, and updated automatically',
-      tooltip: 'Routine cases progress through the chase, validation, and status cycle without partner touch.',
-      pathIds: ['portfolio-routine'],
-    },
-    {
-      id: 'portfolio-queue-node',
-      x: 790,
-      y: 160,
-      width: 150,
-      height: 84,
-      lane: 'partner',
-      kind: 'exception',
       chip: 'QUEUE',
       label: 'Partner Red Queue',
-      detail: '5 cases surfaced',
-      tooltip: 'The partner queue is the narrow exception lane, not the default place where all cases land.',
-      pathIds: ['portfolio-exception'],
+      detail: 'Exception-only review lane',
+      tone: 'exception',
     },
-  ],
-  notes: [
-    'Portfolio routing protects partner time by moving only exceptions into review.',
   ],
 }
 
-const validationBoard: DiagramConfig = {
-  id: 'validation-board',
-  viewBox: '0 0 980 340',
-  lanes: [
+const heroNotes = [
+  'The same workflow owns first upload, re-upload, validation, and client updates.',
+  'Routine work stays inside the operating layer. Partner attention starts only on exception.',
+]
+
+const triageSourceSteps: FlowStep[] = [
+  {
+    chip: 'PORTFOLIO',
+    label: 'All live cases',
+    detail: '23 active immigration matters under management',
+  },
+  {
+    chip: 'FILTER',
+    label: 'AI filter',
+    detail: 'Rules, deadlines, and exception triage',
+  },
+]
+
+const triageOutputs = {
+  routine: {
+    chip: 'ROUTINE',
+    label: 'Routine flow',
+    detail: '18 cases stay auto-handled',
+    tone: 'verified' as FlowTone,
+  },
+  exception: {
+    chip: 'QUEUE',
+    label: 'Partner Red Queue',
+    detail: '5 cases surface with a reason',
+    tone: 'exception' as FlowTone,
+  },
+}
+
+const triageNotes = [
+  'Every live case enters the same filter.',
+  'Routine work does not become partner workload by default.',
+]
+
+const validationMainSteps: FlowStep[] = [
+  {
+    chip: 'INPUT',
+    label: 'Client upload',
+    detail: 'Requested evidence lands in one controlled intake path',
+  },
+  {
+    chip: 'GATE',
+    label: 'Validation gate',
+    detail: 'Completeness, quality, and route fit are checked together',
+  },
+  {
+    chip: 'READY',
+    label: 'Submission-ready gate',
+    detail: 'Validated evidence bundle is explicitly approved',
+    tone: 'verified',
+  },
+  {
+    chip: 'SYNC',
+    label: 'Case sync and status cadence',
+    detail: 'Case record is updated and the client receives the next status',
+    tone: 'verified',
+  },
+]
+
+const validationLoopBranch: FlowBranch = {
+  title: 'If the upload fails',
+  detail:
+    'The system issues the correction request, waits for the new file, and re-runs the same gate without creating extra inbox work.',
+  tone: 'exception',
+  steps: [
     {
-      id: 'client',
-      label: 'Client',
-      detail: 'Evidence source',
-      x: 30,
-      width: 220,
-    },
-    {
-      id: 'automation',
-      label: 'CasePilotAI automation layer',
-      detail: 'Validation and loop control',
-      x: 280,
-      width: 300,
-    },
-    {
-      id: 'output',
-      label: 'Firm output',
-      detail: 'Case record and status',
-      x: 610,
-      width: 330,
-    },
-  ],
-  routes: [
-    {
-      id: 'validation-upload',
-      d: 'M220 120 H330',
-      label: 'client upload',
-      labelX: 244,
-      labelY: 100,
-      tooltip: 'Every requested document enters the same validation gate instead of arriving directly into fee-earner inboxes.',
-      tone: 'base',
-      packet: { label: 'Upload', delay: 0.1, duration: 5.1 },
-    },
-    {
-      id: 'validation-fail',
-      d: 'M440 168 V240',
-      label: 'fails rules',
-      labelX: 454,
-      labelY: 212,
-      tooltip: 'A failed check opens the correction loop with the defect attached to the case.',
-      tone: 'alert',
-      packet: { label: 'Defect', delay: 0.55, duration: 4.8 },
-    },
-    {
-      id: 'validation-request',
-      d: 'M330 262 H245 V280 H220',
-      label: 'request issued',
-      labelX: 210,
-      labelY: 244,
-      tooltip: 'The system sends a correction request that includes the exact reason the file failed.',
-      tone: 'loop',
-      packet: { label: 'Request', delay: 0.9, duration: 6.2 },
-    },
-    {
-      id: 'validation-return',
-      d: 'M220 280 H245 V120 H330',
-      label: 'corrected file',
-      labelX: 202,
-      labelY: 302,
-      tooltip: 'Corrected evidence re-enters the same gate until the case is clean.',
-      tone: 'loop',
-      packet: { label: 'Re-upload', delay: 1.25, duration: 6.4 },
-    },
-    {
-      id: 'validation-ready',
-      d: 'M550 120 H670',
-      label: 'submission-ready',
-      labelX: 582,
-      labelY: 100,
-      tooltip: 'Validated documents move into a submission-ready state with no extra partner chase.',
-      tone: 'success',
-      packet: { label: 'Ready', delay: 1.6, duration: 4.9 },
-    },
-    {
-      id: 'validation-status',
-      d: 'M780 160 V240',
-      label: 'status update',
-      labelX: 794,
-      labelY: 205,
-      tooltip: 'The case record and the client-facing status cadence stay synchronized.',
-      tone: 'success',
-      packet: { label: 'Update', delay: 2, duration: 5.5 },
-    },
-  ],
-  nodes: [
-    {
-      id: 'validation-client-node',
-      x: 60,
-      y: 80,
-      width: 160,
-      height: 80,
-      lane: 'client',
-      kind: 'actor',
-      chip: 'INPUT',
-      label: 'Client upload',
-      detail: 'Requested evidence arrives',
-      tooltip: 'Upload intake is standardized from the start.',
-      pathIds: ['validation-upload'],
-    },
-    {
-      id: 'validation-gate-node',
-      x: 330,
-      y: 80,
-      width: 220,
-      height: 88,
-      lane: 'automation',
-      kind: 'gate',
-      chip: 'GATE',
-      label: 'Validation gate',
-      detail: 'Completeness, quality, and route fit',
-      tooltip: 'Validation is where operational certainty is enforced before human review is needed.',
-      pathIds: [
-        'validation-upload',
-        'validation-fail',
-        'validation-ready',
-        'validation-return',
-      ],
-    },
-    {
-      id: 'validation-loop-node',
-      x: 330,
-      y: 220,
-      width: 220,
-      height: 80,
-      lane: 'automation',
-      kind: 'state',
       chip: 'LOOP',
       label: 'Needs-fix loop',
-      detail: 'Defect-specific correction request',
-      tooltip: 'The correction loop is route-aware, so the client gets the right re-upload request immediately.',
-      pathIds: ['validation-fail', 'validation-request'],
+      detail: 'Defect-specific request is generated',
+      tone: 'exception',
     },
     {
-      id: 'validation-ready-node',
-      x: 670,
-      y: 80,
-      width: 220,
-      height: 84,
-      lane: 'output',
-      kind: 'system',
-      chip: 'READY',
-      label: 'Submission-ready gate',
-      detail: 'Validated evidence bundle complete',
-      tooltip: 'A submission-ready state is explicit, measurable, and auditable.',
-      pathIds: ['validation-ready', 'validation-status'],
+      chip: 'RE-UPLOAD',
+      label: 'Client re-upload',
+      detail: 'Corrected file comes back into the same path',
     },
-    {
-      id: 'validation-sync-node',
-      x: 670,
-      y: 220,
-      width: 220,
-      height: 80,
-      lane: 'output',
-      kind: 'output',
-      chip: 'SYNC',
-      label: 'Case sync and status cadence',
-      detail: 'Case record updated and client notified',
-      tooltip: 'Validated state writes back into the case system and drives the client update cadence.',
-      pathIds: ['validation-status'],
-    },
-  ],
-  notes: [
-    'The same gate controls routine progress and the needs-fix loop.',
   ],
 }
 
-const comparisonManualBoard: DiagramConfig = {
-  id: 'comparison-manual',
-  viewBox: '0 0 900 380',
-  lanes: [
-    {
-      id: 'client',
-      label: 'Client',
-      detail: 'Evidence arrives in fragments',
-      x: 30,
-      width: 220,
-    },
-    {
-      id: 'automation',
-      label: 'Operating gap',
-      detail: 'No gate, no routed system',
-      x: 280,
-      width: 280,
-    },
-    {
-      id: 'firm',
-      label: 'Firm operations',
-      detail: 'Partners carry the load',
-      x: 590,
-      width: 280,
-    },
-  ],
-  routes: [
-    {
-      id: 'comparison-manual-1',
-      d: 'M220 115 H650',
-      label: 'evidence lands in inboxes',
-      labelX: 338,
-      labelY: 96,
-      tooltip: 'Evidence enters directly into partner-owned channels instead of a controlled intake path.',
-      tone: 'alert',
-    },
-    {
-      id: 'comparison-manual-2',
-      d: 'M725 155 V215',
-      label: 'manual tracking',
-      labelX: 740,
-      labelY: 192,
-      tooltip: 'Tracking moves into spreadsheets because no system owns the operational state.',
-      tone: 'alert',
-    },
-    {
-      id: 'comparison-manual-3',
-      d: 'M725 275 V325',
-      label: 'ad-hoc updates',
-      labelX: 742,
-      labelY: 306,
-      tooltip: 'Client updates become one-off replies rather than a maintained status cadence.',
-      tone: 'alert',
-    },
-  ],
-  nodes: [
-    {
-      id: 'comparison-client-manual',
-      x: 60,
-      y: 70,
-      width: 160,
-      height: 88,
-      lane: 'client',
-      kind: 'actor',
-      chip: 'INPUT',
-      label: 'Evidence threads',
-      detail: 'Email, WhatsApp, forwarded attachments',
-      tooltip: 'Client evidence is fragmented before the firm even starts working it.',
-      pathIds: ['comparison-manual-1'],
-    },
-    {
-      id: 'comparison-gap-manual',
-      x: 330,
-      y: 70,
-      width: 190,
-      height: 88,
-      lane: 'automation',
-      kind: 'gate',
-      chip: 'GAP',
-      label: 'No validation gate',
-      detail: 'Rules live in memory',
-      tooltip: 'Without a gate, quality standards depend on whichever partner catches the issue later.',
-      pathIds: ['comparison-manual-1'],
-    },
-    {
-      id: 'comparison-inbox-manual',
-      x: 650,
-      y: 70,
-      width: 190,
-      height: 88,
-      lane: 'firm',
-      kind: 'state',
-      chip: 'MANUAL',
-      label: 'Partner inbox',
-      detail: 'Chase ownership sits in email',
-      tooltip: 'Manual ownership pulls partner time into routine operational handling.',
-      pathIds: ['comparison-manual-1', 'comparison-manual-2'],
-    },
-    {
-      id: 'comparison-sheet-manual',
-      x: 650,
-      y: 190,
-      width: 190,
-      height: 88,
-      lane: 'firm',
-      kind: 'state',
-      chip: 'MANUAL',
-      label: 'Shared spreadsheet',
-      detail: 'No authoritative case state',
-      tooltip: 'Tracking exists, but not as an operational system with enforced transitions.',
-      pathIds: ['comparison-manual-2', 'comparison-manual-3'],
-    },
-    {
-      id: 'comparison-replies-manual',
-      x: 650,
-      y: 310,
-      width: 190,
-      height: 50,
-      lane: 'firm',
-      kind: 'output',
-      chip: 'OUTPUT',
-      label: 'Manual client replies',
-      detail: 'Status answered on demand',
-      tooltip: 'Client updates only happen when the team replies manually.',
-      pathIds: ['comparison-manual-3'],
-    },
-  ],
-  notes: [
-    'Manual state lacks a gate, a routing layer, and a maintained status cadence.',
-  ],
-}
+const comparisonManualSteps: FlowStep[] = [
+  {
+    chip: 'INPUT',
+    label: 'Evidence threads',
+    detail: 'Email, WhatsApp, and forwarded attachments',
+  },
+  {
+    chip: 'GAP',
+    label: 'No validation gate',
+    detail: 'Rules live in memory instead of the system',
+    tone: 'manual',
+  },
+  {
+    chip: 'MANUAL',
+    label: 'Partner inbox',
+    detail: 'Chase ownership sits in email',
+    tone: 'manual',
+  },
+  {
+    chip: 'MANUAL',
+    label: 'Shared spreadsheet',
+    detail: 'No authoritative case state',
+    tone: 'manual',
+  },
+  {
+    chip: 'OUTPUT',
+    label: 'Manual client replies',
+    detail: 'Updates are sent on demand',
+    tone: 'manual',
+  },
+]
 
-const comparisonAlignedBoard: DiagramConfig = {
-  id: 'comparison-aligned',
-  viewBox: '0 0 900 380',
-  lanes: [
-    {
-      id: 'client',
-      label: 'Client',
-      detail: 'Controlled evidence intake',
-      x: 30,
-      width: 220,
-    },
-    {
-      id: 'automation',
-      label: 'CasePilotAI automation layer',
-      detail: 'Gate, loop, and cadence',
-      x: 280,
-      width: 280,
-    },
-    {
-      id: 'firm',
-      label: 'Firm operations',
-      detail: 'Exception-only review',
-      x: 590,
-      width: 280,
-    },
-  ],
-  routes: [
-    {
-      id: 'comparison-aligned-1',
-      d: 'M220 115 H330',
-      label: 'controlled upload',
-      labelX: 236,
-      labelY: 96,
-      tooltip: 'Evidence enters through a controlled upload flow instead of direct channel traffic.',
-      tone: 'base',
-      packet: { label: 'Upload', delay: 0.1, duration: 5.2 },
-    },
-    {
-      id: 'comparison-aligned-2',
-      d: 'M520 115 H650',
-      label: 'exception only',
-      labelX: 548,
-      labelY: 96,
-      tooltip: 'Only exception cases move into partner review.',
-      tone: 'alert',
-      packet: { label: 'Exception', delay: 0.75, duration: 5.1 },
-    },
-    {
-      id: 'comparison-aligned-3',
-      d: 'M520 255 H650',
-      label: 'status + sync',
-      labelX: 548,
-      labelY: 236,
-      tooltip: 'Validated cases write back into the case record and trigger the client status cadence.',
-      tone: 'success',
-      packet: { label: 'Status', delay: 1.3, duration: 5.4 },
-    },
-  ],
-  nodes: [
-    {
-      id: 'comparison-client-aligned',
-      x: 60,
-      y: 70,
-      width: 160,
-      height: 88,
-      lane: 'client',
-      kind: 'actor',
-      chip: 'INPUT',
-      label: 'Client upload',
-      detail: 'Secure evidence link',
-      tooltip: 'The client now enters one operational flow instead of multiple channels.',
-      pathIds: ['comparison-aligned-1'],
-    },
-    {
-      id: 'comparison-gate-aligned',
-      x: 330,
-      y: 70,
-      width: 190,
-      height: 88,
-      lane: 'automation',
-      kind: 'gate',
-      chip: 'GATE',
-      label: 'Validation gate',
-      detail: 'Rules enforced before review',
-      tooltip: 'The gate standardizes what “ready” means across the firm.',
-      pathIds: ['comparison-aligned-1', 'comparison-aligned-2'],
-    },
-    {
-      id: 'comparison-loop-aligned',
-      x: 330,
-      y: 210,
-      width: 190,
-      height: 88,
-      lane: 'automation',
-      kind: 'system',
-      chip: 'CADENCE',
-      label: 'Status cadence',
-      detail: 'Waiting-state updates maintained',
-      tooltip: 'Status updates become part of the operating system rather than manual follow-up.',
-      pathIds: ['comparison-aligned-3'],
-    },
-    {
-      id: 'comparison-queue-aligned',
-      x: 650,
-      y: 70,
-      width: 190,
-      height: 88,
-      lane: 'firm',
-      kind: 'exception',
-      chip: 'QUEUE',
-      label: 'Partner Red Queue',
-      detail: 'Partners see exception work only',
-      tooltip: 'Partner attention is protected for cases that require judgement.',
-      pathIds: ['comparison-aligned-2'],
-    },
-    {
-      id: 'comparison-sync-aligned',
-      x: 650,
-      y: 210,
-      width: 190,
-      height: 88,
-      lane: 'firm',
-      kind: 'output',
-      chip: 'SYNC',
-      label: 'Case system sync',
-      detail: 'Audit trail and client update',
-      tooltip: 'Validated progress is written back and reflected to the client without separate handling.',
-      pathIds: ['comparison-aligned-3'],
-    },
-  ],
-  notes: [
-    'Aligned state adds the missing gate, preserves system ownership, and narrows partner work to exceptions.',
-  ],
-}
+const comparisonAlignedSteps: FlowStep[] = [
+  {
+    chip: 'INPUT',
+    label: 'Client upload',
+    detail: 'Secure evidence request and intake path',
+  },
+  {
+    chip: 'GATE',
+    label: 'Validation gate',
+    detail: 'Rules are enforced before the case reaches the team',
+  },
+  {
+    chip: 'QUEUE',
+    label: 'Partner Red Queue',
+    detail: 'Only exception cases become partner-visible',
+    tone: 'exception',
+  },
+  {
+    chip: 'SYNC',
+    label: 'Case system sync',
+    detail: 'Case record stays current automatically',
+    tone: 'verified',
+  },
+  {
+    chip: 'STATUS',
+    label: 'Client status cadence',
+    detail: 'Routine updates go out without fee-earner effort',
+    tone: 'verified',
+  },
+]
 
-const redQueueBoard: DiagramConfig = {
-  id: 'red-queue-board',
-  viewBox: '0 0 900 300',
-  lanes: [
-    {
-      id: 'ingress',
-      label: 'Ingress',
-      detail: 'Live portfolio entering triage',
-      x: 30,
-      width: 220,
-    },
-    {
-      id: 'filter',
-      label: 'CasePilotAI filter',
-      detail: 'Risk and rule evaluation',
-      x: 280,
-      width: 220,
-    },
-    {
-      id: 'outputs',
-      label: 'Outputs',
-      detail: 'Routine vs exception routing',
-      x: 530,
-      width: 340,
-    },
-  ],
-  routes: [
-    {
-      id: 'queue-ingress-route',
-      d: 'M250 145 H360',
-      label: 'portfolio enters',
-      labelX: 270,
-      labelY: 126,
-      tooltip: 'The filter evaluates the current portfolio as a system, not as isolated manual work items.',
-      tone: 'base',
-      packet: { label: '23 cases', delay: 0.1, duration: 4.8 },
-    },
-    {
-      id: 'queue-routine-route',
-      d: 'M540 110 H650',
-      label: '18 auto-handled',
-      labelX: 562,
-      labelY: 92,
-      tooltip: 'Routine cases collapse into one managed output instead of consuming manual review time.',
-      tone: 'success',
-      packet: { label: 'Routine', delay: 0.45, duration: 4.8 },
-    },
-    {
-      id: 'queue-exception-route',
-      d: 'M540 180 H650',
-      label: '5 exceptions',
-      labelX: 576,
-      labelY: 203,
-      tooltip: 'Exception cases are surfaced with explicit reasons for partner review.',
-      tone: 'alert',
-      packet: { label: 'Exceptions', delay: 0.8, duration: 4.8 },
-    },
-  ],
-  nodes: [
-    {
-      id: 'queue-ingress-node',
-      x: 50,
-      y: 100,
-      width: 200,
-      height: 88,
-      lane: 'ingress',
-      kind: 'actor',
-      chip: 'PORTFOLIO',
-      label: '23 active cases',
-      detail: 'Current live workload',
-      tooltip: 'The red queue starts with the live portfolio, not a manually curated shortlist.',
-      pathIds: ['queue-ingress-route'],
-    },
-    {
-      id: 'queue-filter-node',
-      x: 360,
-      y: 100,
-      width: 180,
-      height: 88,
-      lane: 'filter',
-      kind: 'system',
-      chip: 'FILTER',
-      label: 'AI filter',
-      detail: 'Rules, risk, and deadline checks',
-      tooltip: 'The filter decides whether the case remains routine or enters exception review.',
-      pathIds: [
-        'queue-ingress-route',
-        'queue-routine-route',
-        'queue-exception-route',
-      ],
-    },
-    {
-      id: 'queue-routine-node',
-      x: 650,
-      y: 60,
-      width: 200,
-      height: 84,
-      lane: 'outputs',
-      kind: 'output',
-      chip: 'ROUTINE',
-      label: '18 auto-handled',
-      detail: 'Filed, chased, and updated',
-      tooltip: 'Routine work is collapsed into one managed output with no partner touch.',
-      pathIds: ['queue-routine-route'],
-    },
-    {
-      id: 'queue-alert-node',
-      x: 650,
-      y: 170,
-      width: 200,
-      height: 84,
-      lane: 'outputs',
-      kind: 'exception',
-      chip: 'QUEUE',
-      label: 'Partner Red Queue',
-      detail: '5 surfaced exceptions',
-      tooltip: 'Only five cases land in the red queue, with a visible reason attached.',
-      pathIds: ['queue-exception-route'],
-    },
-  ],
-  notes: [
-    'The red queue is a routing output, not a second manual backlog.',
-  ],
-}
+const comparisonManualNotes = [
+  'Files arrive in fragments instead of a controlled path.',
+  'Partners and senior staff end up carrying the admin load.',
+]
+
+const comparisonAlignedNotes = [
+  'The gate catches defects before human review starts.',
+  'The queue narrows partner work to genuine exceptions.',
+]
+
+const queueFilterSteps: FlowStep[] = [
+  {
+    chip: 'PORTFOLIO',
+    label: '23 active cases',
+    detail: 'Current live portfolio entering triage',
+  },
+  {
+    chip: 'FILTER',
+    label: 'AI filter',
+    detail: 'Risk, rule, and completeness checks',
+  },
+]
 
 const timelineStages: TimelineStage[] = [
   {
@@ -1124,91 +393,11 @@ const timelineStages: TimelineStage[] = [
     detail:
       'CasePilotAI maps the route, defines the evidence list, and opens the chase path before the case leaves intake.',
     chip: 'INIT',
-    board: {
-      id: 'timeline-init',
-      viewBox: '0 0 640 170',
-      lanes: [
-        { id: 'firm', label: 'Firm', detail: 'Case opened', x: 20, width: 160 },
-        {
-          id: 'automation',
-          label: 'Automation',
-          detail: 'Route template applied',
-          x: 210,
-          width: 190,
-        },
-        {
-          id: 'client',
-          label: 'Client',
-          detail: 'Request prepared',
-          x: 430,
-          width: 190,
-        },
-      ],
-      routes: [
-        {
-          id: 'timeline-init-route-1',
-          d: 'M170 86 H250',
-          label: 'route mapped',
-          labelX: 180,
-          labelY: 66,
-          tooltip: 'The case inherits a route-specific evidence model immediately.',
-          tone: 'base',
-        },
-        {
-          id: 'timeline-init-route-2',
-          d: 'M400 86 H470',
-          label: 'request assembled',
-          labelX: 406,
-          labelY: 66,
-          tooltip: 'The first evidence request is generated from the route map rather than manual drafting.',
-          tone: 'success',
-        },
-      ],
-      nodes: [
-        {
-          id: 'timeline-init-node-1',
-          x: 40,
-          y: 50,
-          width: 130,
-          height: 72,
-          lane: 'firm',
-          kind: 'state',
-          chip: 'CASE',
-          label: 'Case created',
-          detail: 'Matter opened',
-          tooltip: 'The case exists, but the operating model must now take over the routine path.',
-          pathIds: ['timeline-init-route-1'],
-        },
-        {
-          id: 'timeline-init-node-2',
-          x: 250,
-          y: 40,
-          width: 150,
-          height: 90,
-          lane: 'automation',
-          kind: 'system',
-          chip: 'MODEL',
-          label: 'Route checklist',
-          detail: 'Required evidence mapped',
-          tooltip: 'CasePilotAI applies a route-specific evidence list and chase schedule.',
-          pathIds: ['timeline-init-route-1', 'timeline-init-route-2'],
-        },
-        {
-          id: 'timeline-init-node-3',
-          x: 470,
-          y: 50,
-          width: 130,
-          height: 72,
-          lane: 'client',
-          kind: 'actor',
-          chip: 'NEXT',
-          label: 'Client request',
-          detail: 'Upload link ready',
-          tooltip: 'The client request is ready before any manual chasing begins.',
-          pathIds: ['timeline-init-route-2'],
-        },
-      ],
-    },
+    steps: [
+      { chip: 'FIRM', label: 'Case opened' },
+      { chip: 'MODEL', label: 'Route mapped', tone: 'verified' },
+      { chip: 'REQUEST', label: 'Upload request prepared', tone: 'verified' },
+    ],
   },
   {
     day: 'Day 4',
@@ -1216,79 +405,11 @@ const timelineStages: TimelineStage[] = [
     detail:
       'The route-aware chaser sends one structured upload request with guidance on what qualifies and what will fail.',
     chip: 'CHASE',
-    board: {
-      id: 'timeline-chase',
-      viewBox: '0 0 640 170',
-      lanes: [
-        { id: 'automation', label: 'Automation', detail: 'Request owner', x: 20, width: 180 },
-        { id: 'client', label: 'Client', detail: 'Response path', x: 220, width: 180 },
-        { id: 'firm', label: 'Firm', detail: 'Partner untouched', x: 420, width: 180 },
-      ],
-      routes: [
-        {
-          id: 'timeline-chase-route-1',
-          d: 'M170 86 H260',
-          label: 'upload link sent',
-          labelX: 176,
-          labelY: 66,
-          tooltip: 'The request comes from the system with validation guidance built in.',
-          tone: 'success',
-        },
-        {
-          id: 'timeline-chase-route-2',
-          d: 'M400 86 H460',
-          label: 'no partner action',
-          labelX: 402,
-          labelY: 66,
-          tooltip: 'Routine chasing does not require a partner to intervene.',
-          tone: 'base',
-        },
-      ],
-      nodes: [
-        {
-          id: 'timeline-chase-node-1',
-          x: 40,
-          y: 40,
-          width: 130,
-          height: 90,
-          lane: 'automation',
-          kind: 'system',
-          chip: 'CHASE',
-          label: 'Evidence request',
-          detail: 'Route-aware chaser',
-          tooltip: 'The request is generated from the route model and validation rules.',
-          pathIds: ['timeline-chase-route-1'],
-        },
-        {
-          id: 'timeline-chase-node-2',
-          x: 260,
-          y: 50,
-          width: 140,
-          height: 72,
-          lane: 'client',
-          kind: 'actor',
-          chip: 'INPUT',
-          label: 'Client portal',
-          detail: 'Ready to upload',
-          tooltip: 'Clients are given one place to respond and one standard to meet.',
-          pathIds: ['timeline-chase-route-1', 'timeline-chase-route-2'],
-        },
-        {
-          id: 'timeline-chase-node-3',
-          x: 460,
-          y: 50,
-          width: 140,
-          height: 72,
-          lane: 'firm',
-          kind: 'state',
-          chip: 'QUIET',
-          label: 'Partner inbox',
-          detail: 'No chase traffic',
-          tooltip: 'Routine chase activity stays out of partner email.',
-          pathIds: ['timeline-chase-route-2'],
-        },
-      ],
-    },
+    steps: [
+      { chip: 'CHASE', label: 'Request sent', tone: 'verified' },
+      { chip: 'CLIENT', label: 'Client portal ready' },
+      { chip: 'QUIET', label: 'No partner inbox traffic' },
+    ],
   },
   {
     day: 'Day 10',
@@ -1296,92 +417,11 @@ const timelineStages: TimelineStage[] = [
     detail:
       'The passport fails the gate overnight. The case moves into the needs-fix loop before the team starts work the next morning.',
     chip: 'GATE',
-    board: {
-      id: 'timeline-defect',
-      viewBox: '0 0 640 170',
-      lanes: [
-        { id: 'client', label: 'Client', detail: 'Corrective upload', x: 20, width: 170 },
-        { id: 'automation', label: 'Automation', detail: 'Defect loop', x: 210, width: 210 },
-        { id: 'firm', label: 'Firm', detail: 'Partner still untouched', x: 440, width: 170 },
-      ],
-      routes: [
-        {
-          id: 'timeline-defect-route-1',
-          d: 'M320 70 V115 H170',
-          label: 'needs-fix request',
-          labelX: 176,
-          labelY: 130,
-          tooltip: 'The failed file triggers the correction loop with a precise defect reason.',
-          tone: 'alert',
-        },
-        {
-          id: 'timeline-defect-route-2',
-          d: 'M170 115 H210',
-          label: 'corrected re-upload',
-          labelX: 170,
-          labelY: 95,
-          tooltip: 'The client returns a corrected document to the same gate.',
-          tone: 'loop',
-        },
-        {
-          id: 'timeline-defect-route-3',
-          d: 'M420 70 H470',
-          label: 'no escalation yet',
-          labelX: 424,
-          labelY: 50,
-          tooltip: 'Routine defects do not surface to partners unless the rule set says they should.',
-          tone: 'base',
-        },
-      ],
-      nodes: [
-        {
-          id: 'timeline-defect-node-1',
-          x: 40,
-          y: 80,
-          width: 130,
-          height: 72,
-          lane: 'client',
-          kind: 'actor',
-          chip: 'FIX',
-          label: 'Client re-upload',
-          detail: 'Corrected passport',
-          tooltip: 'The client receives a corrective request tied to the exact failed evidence.',
-          pathIds: ['timeline-defect-route-1', 'timeline-defect-route-2'],
-        },
-        {
-          id: 'timeline-defect-node-2',
-          x: 210,
-          y: 20,
-          width: 210,
-          height: 98,
-          lane: 'automation',
-          kind: 'gate',
-          chip: 'FAIL',
-          label: 'Validation gate',
-          detail: 'Blurry passport detected',
-          tooltip: 'The gate catches the defect early and routes it into correction automatically.',
-          pathIds: [
-            'timeline-defect-route-1',
-            'timeline-defect-route-2',
-            'timeline-defect-route-3',
-          ],
-        },
-        {
-          id: 'timeline-defect-node-3',
-          x: 470,
-          y: 20,
-          width: 130,
-          height: 72,
-          lane: 'firm',
-          kind: 'state',
-          chip: 'QUIET',
-          label: 'Partner queue',
-          detail: 'Still clear',
-          tooltip: 'Because the defect is routine, it does not consume partner attention.',
-          pathIds: ['timeline-defect-route-3'],
-        },
-      ],
-    },
+    steps: [
+      { chip: 'FAIL', label: 'Upload fails validation', tone: 'exception' },
+      { chip: 'FIX', label: 'Correction request issued' },
+      { chip: 'RE-UPLOAD', label: 'Client asked for corrected file' },
+    ],
   },
   {
     day: 'Day 16',
@@ -1389,79 +429,11 @@ const timelineStages: TimelineStage[] = [
     detail:
       'The corrected evidence passes validation. The case is now explicitly submission-ready and only exception work remains visible to partners.',
     chip: 'READY',
-    board: {
-      id: 'timeline-ready',
-      viewBox: '0 0 640 170',
-      lanes: [
-        { id: 'automation', label: 'Automation', detail: 'Ready state', x: 20, width: 200 },
-        { id: 'firm', label: 'Firm', detail: 'Case record', x: 240, width: 190 },
-        { id: 'partner', label: 'Partner', detail: 'Exceptions only', x: 450, width: 170 },
-      ],
-      routes: [
-        {
-          id: 'timeline-ready-route-1',
-          d: 'M190 86 H280',
-          label: 'ready sync',
-          labelX: 202,
-          labelY: 66,
-          tooltip: 'Submission-ready state writes back into the case record.',
-          tone: 'success',
-        },
-        {
-          id: 'timeline-ready-route-2',
-          d: 'M430 86 H480',
-          label: 'exceptions remain isolated',
-          labelX: 384,
-          labelY: 118,
-          tooltip: 'Partners continue to see only exceptions, not routine ready cases.',
-          tone: 'base',
-        },
-      ],
-      nodes: [
-        {
-          id: 'timeline-ready-node-1',
-          x: 40,
-          y: 40,
-          width: 150,
-          height: 90,
-          lane: 'automation',
-          kind: 'system',
-          chip: 'READY',
-          label: 'Submission-ready',
-          detail: 'Validated evidence complete',
-          tooltip: 'The case reaches a defined ready state that the firm can trust.',
-          pathIds: ['timeline-ready-route-1'],
-        },
-        {
-          id: 'timeline-ready-node-2',
-          x: 280,
-          y: 50,
-          width: 150,
-          height: 72,
-          lane: 'firm',
-          kind: 'output',
-          chip: 'SYNC',
-          label: 'Case record',
-          detail: 'Audit trail updated',
-          tooltip: 'The case system becomes the live record of progress.',
-          pathIds: ['timeline-ready-route-1', 'timeline-ready-route-2'],
-        },
-        {
-          id: 'timeline-ready-node-3',
-          x: 480,
-          y: 50,
-          width: 120,
-          height: 72,
-          lane: 'partner',
-          kind: 'exception',
-          chip: 'QUEUE',
-          label: 'Red queue',
-          detail: 'Exception-only',
-          tooltip: 'Partner attention is reserved for actual exception work.',
-          pathIds: ['timeline-ready-route-2'],
-        },
-      ],
-    },
+    steps: [
+      { chip: 'READY', label: 'Validation passed', tone: 'verified' },
+      { chip: 'SYNC', label: 'Submission-ready state stored', tone: 'verified' },
+      { chip: 'QUEUE', label: 'Partners still see exceptions only', tone: 'verified' },
+    ],
   },
   {
     day: 'Day 22',
@@ -1469,79 +441,11 @@ const timelineStages: TimelineStage[] = [
     detail:
       'The case remains in a waiting state, but the client still receives the right update without generating a partner email thread.',
     chip: 'STATUS',
-    board: {
-      id: 'timeline-status',
-      viewBox: '0 0 640 170',
-      lanes: [
-        { id: 'firm', label: 'Firm', detail: 'Case record', x: 20, width: 180 },
-        { id: 'automation', label: 'Automation', detail: 'Cadence engine', x: 220, width: 190 },
-        { id: 'client', label: 'Client', detail: 'Update received', x: 430, width: 180 },
-      ],
-      routes: [
-        {
-          id: 'timeline-status-route-1',
-          d: 'M170 86 H260',
-          label: 'waiting-state read',
-          labelX: 170,
-          labelY: 66,
-          tooltip: 'The cadence engine reads the case state directly from the system record.',
-          tone: 'base',
-        },
-        {
-          id: 'timeline-status-route-2',
-          d: 'M410 86 H470',
-          label: 'status update sent',
-          labelX: 406,
-          labelY: 66,
-          tooltip: 'The client receives the update without manual drafting or sending.',
-          tone: 'success',
-        },
-      ],
-      nodes: [
-        {
-          id: 'timeline-status-node-1',
-          x: 40,
-          y: 50,
-          width: 130,
-          height: 72,
-          lane: 'firm',
-          kind: 'output',
-          chip: 'STATE',
-          label: 'Case record',
-          detail: 'Waiting state stored',
-          tooltip: 'The system record is the source of truth for the current case state.',
-          pathIds: ['timeline-status-route-1'],
-        },
-        {
-          id: 'timeline-status-node-2',
-          x: 260,
-          y: 40,
-          width: 150,
-          height: 90,
-          lane: 'automation',
-          kind: 'system',
-          chip: 'CADENCE',
-          label: 'Status cadence',
-          detail: 'Update timing enforced',
-          tooltip: 'CasePilotAI turns stored state into client-facing communication on schedule.',
-          pathIds: ['timeline-status-route-1', 'timeline-status-route-2'],
-        },
-        {
-          id: 'timeline-status-node-3',
-          x: 470,
-          y: 50,
-          width: 130,
-          height: 72,
-          lane: 'client',
-          kind: 'actor',
-          chip: 'OUTPUT',
-          label: 'Client update',
-          detail: 'No manual reply needed',
-          tooltip: 'Routine status updates no longer rely on someone noticing and replying.',
-          pathIds: ['timeline-status-route-2'],
-        },
-      ],
-    },
+    steps: [
+      { chip: 'STATE', label: 'Waiting state stored', tone: 'verified' },
+      { chip: 'CADENCE', label: 'Status cadence triggered', tone: 'verified' },
+      { chip: 'CLIENT', label: 'Client updated automatically', tone: 'verified' },
+    ],
   },
 ]
 
@@ -1586,7 +490,7 @@ export default function Home() {
   const [filterState, setFilterState] = useState<'idle' | 'scanning' | 'done'>(
     'idle',
   )
-  const [aligned, setAligned] = useState(false)
+  const [activeExceptionId, setActiveExceptionId] = useState<string | null>(null)
 
   const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const heroRef = useRef<HTMLElement>(null)
@@ -1611,12 +515,17 @@ export default function Home() {
   const handleFilterRun = () => {
     if (filterTimerRef.current) clearTimeout(filterTimerRef.current)
     setFilterState('scanning')
-    filterTimerRef.current = setTimeout(() => setFilterState('done'), 1350)
+    setActiveExceptionId(null)
+    filterTimerRef.current = setTimeout(() => {
+      setFilterState('done')
+      setActiveExceptionId(redQueueExceptions[0]?.id ?? null)
+    }, 1350)
   }
 
   const resetFilter = () => {
     if (filterTimerRef.current) clearTimeout(filterTimerRef.current)
     setFilterState('idle')
+    setActiveExceptionId(null)
   }
 
   const hourlyRate = useMemo(() => salary / (52 * 40), [salary])
@@ -1642,24 +551,8 @@ export default function Home() {
   const metricDefects = useCountUp(87, outcomesVisible)
   const metricMinutes = useCountUp(45, outcomesVisible)
   const metricSavings = useCountUp(17760, outcomesVisible)
-
-  const comparisonBoard = aligned ? comparisonAlignedBoard : comparisonManualBoard
-  const comparisonNotes = aligned
-    ? [
-        'Validation is explicit before any case reaches partner review.',
-        'Status cadence and case sync now belong to the operating layer.',
-        'Partner attention is constrained to the exception lane.',
-      ]
-    : [
-        'Uploads land in channels instead of a controlled intake path.',
-        'Rules are implied by partner memory rather than enforced by a gate.',
-        'Client status becomes manual message traffic instead of system output.',
-      ]
-
-  const forcedQueuePaths =
-    filterState === 'idle'
-      ? []
-      : ['queue-ingress-route', 'queue-routine-route', 'queue-exception-route']
+  const activeException =
+    redQueueExceptions.find((item) => item.id === activeExceptionId) ?? redQueueExceptions[0]
 
   return (
     <div className="page">
@@ -1677,7 +570,7 @@ export default function Home() {
         </nav>
         <div className="nav-cta">
           <a className="btn ghost" href="#system">
-            Inspect system
+            How it works
           </a>
           <a className="btn primary" href="#cta">
             Book a demo
@@ -1693,44 +586,36 @@ export default function Home() {
           style={reduceMotion ? undefined : { opacity: heroOpacity }}
         >
           <div className="section-content hero-shell">
-            <div className="hero-grid">
+            <div className="hero-stack">
               <motion.div
-                className="hero-copy"
+                className="hero-copy hero-copy-centered"
                 initial={reduceMotion ? false : { opacity: 0, y: 24 }}
                 animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.72, ease: smoothEase }}
               >
                 <div className="hero-kicker">
                   <span className="section-number">00</span>
-                  <p className="eyebrow">CasePilotAI for partner-led UK immigration firms</p>
+                  <p className="eyebrow">For small UK immigration firms</p>
                 </div>
-                <h1>The operating layer between your case system and your clients.</h1>
+                <h1>Take document chasing, upload checking, and routine client updates off your team&apos;s desk.</h1>
                 <p className="lead">
-                  CasePilotAI enforces document chasing, upload validation,
-                  exception routing, and status cadence across every live case.
-                  Partners see only the red queue.
+                  Built for partner-led UK immigration firms, CasePilotAI sits
+                  alongside your case system, chases evidence, blocks bad
+                  uploads before staff review them, and keeps clients updated
+                  automatically.
                 </p>
                 <div className="hero-actions">
                   <a className="btn primary" href="#cta">
-                    Start 5-min setup
+                    Book a demo
                   </a>
                   <a className="btn ghost" href="#system">
-                    See the operating model
+                    See how it works
                   </a>
-                </div>
-                <div className="hero-proof-strip">
-                  {heroProof.map((item) => (
-                    <div key={item.label} className="proof-cell">
-                      <span className="proof-label">{item.label}</span>
-                      <strong>{item.value}</strong>
-                      <p>{item.detail}</p>
-                    </div>
-                  ))}
                 </div>
               </motion.div>
 
               <motion.div
-                className="hero-panel"
+                className="hero-panel hero-panel-stage"
                 style={reduceMotion ? undefined : { y: heroBoardY }}
                 initial={reduceMotion ? false : { opacity: 0, y: 30 }}
                 animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
@@ -1738,23 +623,28 @@ export default function Home() {
               >
                 <div className="hero-panel-head">
                   <div>
-                    <span className="spec-label">Live operating model</span>
-                    <h2>One route-aware loop governs every case.</h2>
+                    <span className="spec-label">How it works</span>
+                    <h2>One workflow handles the routine work on every case.</h2>
                   </div>
                   <p>
-                    Client evidence enters a single gate. Failures loop back.
-                    Only exception work reaches partners.
+                    Clients upload documents in one place. Bad uploads are sent
+                    back automatically. Only problem cases reach the partner.
                   </p>
                 </div>
-                <ArchitectureBoard config={heroBoard} className="hero-board" />
+                <HeroOperatingModel
+                  mainSteps={heroMainSteps}
+                  correctionBranch={heroCorrectionBranch}
+                  exceptionBranch={heroExceptionBranch}
+                  notes={heroNotes}
+                />
                 <div className="hero-panel-footer">
                   <div>
-                    <span className="spec-label">System rule</span>
-                    <p>Submission-ready state is explicit and auditable.</p>
+                    <span className="spec-label">What your team gets</span>
+                    <p>A clear record of what has been requested, fixed, and approved.</p>
                   </div>
                   <div>
-                    <span className="spec-label">Partner load</span>
-                    <p>Exception branch only. Routine cases remain automated.</p>
+                    <span className="spec-label">What partners avoid</span>
+                    <p>Routine chasing, file checking, and update emails.</p>
                   </div>
                 </div>
               </motion.div>
@@ -1765,9 +655,9 @@ export default function Home() {
         <RevealSection className="section problem" id="problem" tone="light">
           <SectionIntro
             index="01"
-            eyebrow="Knowledge infrastructure failure"
-            title="When operational state lives in inboxes and memory, partner time becomes the workflow engine."
-            body="The product problem is not a missing assistant. It is missing system ownership over intake, validation, correction loops, and client-facing status."
+            eyebrow="Why firms buy this"
+            title="Most small immigration firms are still running delivery through inboxes, WhatsApp, and memory."
+            body="That is why document chasing, upload checking, and client updates still keep landing on partners and senior staff."
           />
           <div className="problem-layout">
             <div className="problem-grid">
@@ -1792,16 +682,16 @@ export default function Home() {
             </div>
             <div className="problem-ledger">
               <div>
-                <span className="spec-label">Operational effect</span>
-                <p>Partners absorb routine chase work because the system does not own it.</p>
+                <span className="spec-label">What happens now</span>
+                <p>Routine work sits with the team because no system owns the follow-up.</p>
               </div>
               <div>
-                <span className="spec-label">Result</span>
-                <p>Defects are caught late, client updates are manual, and the case state is never fully trusted.</p>
+                <span className="spec-label">What it costs</span>
+                <p>Defects get caught late, clients keep asking for updates, and staff lose hours every week.</p>
               </div>
               <div>
-                <span className="spec-label">Required fix</span>
-                <p>An automation layer that defines gates, loops, and exception routing before partner review.</p>
+                <span className="spec-label">What fixes it</span>
+                <p>A system that chases, checks, and updates automatically before the case needs partner input.</p>
               </div>
             </div>
           </div>
@@ -1810,24 +700,24 @@ export default function Home() {
         <RevealSection className="section system" id="system" tone="dark">
           <SectionIntro
             index="02"
-            eyebrow="System architecture"
-            title="A portfolio routing system and a single-case validation system work together."
-            body="The product is easiest to trust when the routing model and the validation model are both explicit. Routine cases stay in flow. Exceptions surface with a reason."
+            eyebrow="How the system works"
+            title="Every case follows the same path: chase, check, fix if needed, then update the client."
+            body="Routine matters keep moving without staff intervention. Cases with missing evidence or real risk are surfaced for review."
           />
           <div className="system-layout">
             <div className="system-copy">
               <div className="system-spec-list">
                 <div>
-                  <span className="spec-label">Routing rule</span>
-                  <p>All live cases enter the filter. Routine work never becomes partner workload by default.</p>
+                  <span className="spec-label">Case triage</span>
+                  <p>Every live case goes through the same filter, so routine work does not end up in the partner inbox by default.</p>
                 </div>
                 <div>
-                  <span className="spec-label">Validation rule</span>
-                  <p>Every document passes the same gate, and every failure loops back with the defect reason attached.</p>
+                  <span className="spec-label">Upload checks</span>
+                  <p>Every file is checked the same way, and failed uploads go back with a clear reason for the client.</p>
                 </div>
                 <div>
-                  <span className="spec-label">Output rule</span>
-                  <p>Validated state writes back into the case record and drives the client status cadence.</p>
+                  <span className="spec-label">Client updates</span>
+                  <p>Once the case status changes, the case record and client update stay in sync.</p>
                 </div>
               </div>
             </div>
@@ -1835,22 +725,31 @@ export default function Home() {
               <div className="board-module">
                 <div className="board-module-head">
                   <div>
-                    <span className="spec-label">Subsystem A</span>
-                    <h3>Portfolio routing</h3>
+                    <span className="spec-label">Part 1</span>
+                    <h3>Case triage</h3>
                   </div>
-                  <p>23 cases enter. 18 remain routine. 5 become partner-visible.</p>
+                  <p>All live cases are sorted into routine work or cases that need review.</p>
                 </div>
-                <ArchitectureBoard config={portfolioBoard} showLegend />
+                <SystemTriageStrip
+                  sourceSteps={triageSourceSteps}
+                  routineStep={triageOutputs.routine}
+                  exceptionStep={triageOutputs.exception}
+                  notes={triageNotes}
+                />
               </div>
               <div className="board-module">
                 <div className="board-module-head">
                   <div>
-                    <span className="spec-label">Subsystem B</span>
-                    <h3>Single-case validation</h3>
+                    <span className="spec-label">Part 2</span>
+                    <h3>Upload checking</h3>
                   </div>
-                  <p>The same gate controls first-pass validation, correction loops, and submission-ready state.</p>
+                  <p>The same checks handle first upload, re-upload, and ready-to-submit status.</p>
                 </div>
-                <ArchitectureBoard config={validationBoard} />
+                <SystemValidationStrip
+                  mainSteps={validationMainSteps}
+                  correctionBranch={validationLoopBranch}
+                  notes={['The same gate controls first upload, re-upload, and ready state.']}
+                />
               </div>
             </div>
           </div>
@@ -1859,22 +758,18 @@ export default function Home() {
         <RevealSection className="section comparison" id="comparison" tone="light">
           <SectionIntro
             index="03"
-            eyebrow="Manual vs aligned state"
-            title="The same architecture reads very differently before and after the operating layer exists."
-            body="This is the same workflow rendered in two states. The manual state has no gate and no routing ownership. The aligned state snaps into one controlled system."
+            eyebrow="Before and after"
+            title="Without a proper delivery layer, routine case work keeps landing on the team."
+            body="Compare the manual setup with the CasePilotAI setup. The difference is who ends up doing the routine work."
           />
           <div className="comparison-layout">
             <div className="comparison-copy">
-              <div className="comparison-toggle">
-                <button className="btn secondary" onClick={() => setAligned((prev) => !prev)}>
-                  {aligned ? 'Show manual state' : 'Show aligned state'}
-                </button>
-                <span className={`mode-pill ${aligned ? 'aligned' : 'manual'}`}>
-                  {aligned ? 'Aligned architecture' : 'Manual architecture'}
-                </span>
-              </div>
               <div className="comparison-notes">
-                {comparisonNotes.map((item) => (
+                {[
+                  'The manual version depends on inboxes, memory, and spreadsheets.',
+                  'The aligned version puts the gate, the sync point, and the client update cadence in one owned system.',
+                  'The difference is not software complexity. It is who gets pulled into routine work.',
+                ].map((item) => (
                   <div key={item} className="comparison-note-row">
                     <span className="spec-label">Spec</span>
                     <p>{item}</p>
@@ -1883,17 +778,12 @@ export default function Home() {
               </div>
             </div>
             <div className="comparison-shell">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={comparisonBoard.id}
-                  initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-                  animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                  exit={reduceMotion ? undefined : { opacity: 0, y: -18 }}
-                  transition={{ duration: 0.45, ease: smoothEase }}
-                >
-                  <ArchitectureBoard config={comparisonBoard} />
-                </motion.div>
-              </AnimatePresence>
+              <ComparisonStrips
+                manualSteps={comparisonManualSteps}
+                alignedSteps={comparisonAlignedSteps}
+                manualNotes={comparisonManualNotes}
+                alignedNotes={comparisonAlignedNotes}
+              />
             </div>
           </div>
         </RevealSection>
@@ -1901,9 +791,9 @@ export default function Home() {
         <RevealSection className="section outcomes" id="outcomes" tone="dark">
           <SectionIntro
             index="04"
-            eyebrow="Operational outcomes"
-            title="Authority comes from measurable control, not animation for its own sake."
-            body="The commercial case stays visible: partner hours recovered, defects caught earlier, and annual savings against the flat monthly price."
+            eyebrow="What firms get back"
+            title="Less partner admin. Earlier defect catches. Fewer client update emails."
+            body="The value is straightforward: less routine work for the team and a clearer path to submission-ready cases."
           />
           <div className="metrics-grid" ref={outcomesRef}>
             <MetricCard
@@ -1940,9 +830,9 @@ export default function Home() {
         <RevealSection className="section timeline" id="timeline" tone="light">
           <SectionIntro
             index="05"
-            eyebrow="Case-state timeline"
-            title="One immigration case, rendered as explicit state transitions rather than generic milestones."
-            body="Each stage is a small excerpt of the same operating model. That keeps the timeline tied to the real product instead of becoming a decorative checklist."
+            eyebrow="One case in practice"
+            title="This is what one immigration case looks like when the routine work is handled properly."
+            body="From opening the case to sending updates, the system handles the repetitive steps and only surfaces issues when something is wrong."
           />
           <div className="timeline-rail">
             {timelineStages.map((stage, index) => (
@@ -1955,32 +845,16 @@ export default function Home() {
           <SectionIntro
             index="06"
             eyebrow="Partner Red Queue"
-            title="The red queue is a routing output, not a second backlog."
-            body="Run the filter and the portfolio separates into one collapsed routine lane and one visible exception lane. Each surfaced case carries a reason for review."
+            title="Partners should only see the cases that actually need judgment."
+            body="The filter keeps routine cases moving and brings forward the few files that are missing evidence, failing checks, or need a decision."
           />
           <div className="queue-layout">
-            <div className="queue-board-shell">
-              <div className={`queue-ingress state-${filterState}`}>
-                <div className="queue-ingress-head">
-                  <span className="spec-label">Ingress bar</span>
-                  <p>23 live cases under current management</p>
-                </div>
-                <div className="queue-ingress-bar">
-                  {Array.from({ length: 23 }).map((_, index) => {
-                    const isException = [1, 4, 8, 15, 19].includes(index)
-                    return (
-                      <span
-                        key={index}
-                        className={`queue-segment ${isException ? 'exception' : 'routine'}`}
-                      />
-                    )
-                  })}
-                  <span className="queue-scan-line" />
-                </div>
-              </div>
-
-              <ArchitectureBoard config={redQueueBoard} forceActivePaths={forcedQueuePaths} />
-            </div>
+            <QueueSplitPanel
+              filterState={filterState}
+              cases={redQueuePortfolio}
+              activeExceptionId={activeExceptionId}
+              onSelectException={setActiveExceptionId}
+            />
 
             <div className="queue-side">
               <div className="queue-controls">
@@ -1989,54 +863,98 @@ export default function Home() {
                   onClick={handleFilterRun}
                   disabled={filterState === 'scanning'}
                 >
-                  {filterState === 'done' ? 'Run again' : 'Run filter'}
+                  {filterState === 'done' ? 'Run it again' : 'Run the filter'}
                 </button>
                 <button className="btn ghost" onClick={resetFilter}>
                   Reset
                 </button>
               </div>
-              <div className="routine-summary-card">
-                <span className="spec-label">Routine output</span>
-                <strong>18 cases stay auto-handled</strong>
-                <p>
-                  Chase requests, corrected re-uploads, case sync, and client status
-                  updates continue without entering the partner lane.
-                </p>
-              </div>
-              <AnimatePresence mode="popLayout">
-                <motion.div
-                  className="exception-list"
+              <SectionSpecNote className="queue-side-note">
+                Most matters never become partner-visible. The team sees the exceptions, not the whole portfolio.
+              </SectionSpecNote>
+              <div className="queue-review-panel">
+                <div className="queue-review-head">
+                  <div>
+                    <span className="spec-label">Surfaced exceptions</span>
+                    <strong>
+                      {filterState === 'done'
+                        ? 'Review why each case reached the queue'
+                        : filterState === 'scanning'
+                          ? 'The filter is evaluating the live portfolio'
+                          : 'Run the filter to see which cases actually need review'}
+                    </strong>
+                  </div>
+                  <p>
+                    {filterState === 'done'
+                      ? 'Click any surfaced case to inspect the reason and required action.'
+                      : 'This section stays quiet until the filter separates routine matters from exceptions.'}
+                  </p>
+                </div>
+                <AnimatePresence mode="popLayout">
+                  <motion.div
+                    className="exception-list"
+                    initial={false}
+                    animate={{ opacity: filterState === 'idle' ? 0.42 : 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {redQueueExceptions.map((item, index) => (
+                      <motion.button
+                        key={item.id}
+                        type="button"
+                        className={`exception-card ${activeExceptionId === item.id ? 'active' : ''}`}
+                        onClick={() => setActiveExceptionId(item.id)}
+                        disabled={filterState !== 'done'}
+                        initial={reduceMotion ? false : { opacity: 0, x: 20 }}
+                        animate={
+                          filterState === 'done'
+                            ? { opacity: 1, x: 0 }
+                            : filterState === 'scanning'
+                              ? { opacity: 0.5, x: 8 }
+                              : { opacity: 0.22, x: 0 }
+                        }
+                        transition={{
+                          duration: 0.34,
+                          delay: filterState === 'done' ? 0.08 + index * 0.05 : 0,
+                          ease: smoothEase,
+                        }}
+                      >
+                        <div className="exception-card-head">
+                          <span className="spec-label">Needs review</span>
+                          <strong>{item.title}</strong>
+                        </div>
+                        <p>{item.reason}</p>
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
+                <motion.article
+                  className={`exception-detail-card ${filterState === 'done' ? 'ready' : ''}`}
                   initial={false}
-                  animate={{ opacity: filterState === 'idle' ? 0.45 : 1 }}
-                  transition={{ duration: 0.3 }}
+                  animate={{
+                    opacity: filterState === 'done' ? 1 : 0.5,
+                    y: filterState === 'done' ? 0 : 6,
+                  }}
+                  transition={{ duration: 0.28, ease: smoothEase }}
                 >
-                  {redQueueExceptions.map((item, index) => (
-                    <motion.article
-                      key={item.title}
-                      className="exception-card"
-                      initial={reduceMotion ? false : { opacity: 0, x: 20 }}
-                      animate={
-                        filterState === 'done'
-                          ? { opacity: 1, x: 0 }
-                          : filterState === 'scanning'
-                            ? { opacity: 0.4, x: 8 }
-                            : { opacity: 0.28, x: 0 }
-                      }
-                      transition={{
-                        duration: 0.34,
-                        delay: filterState === 'done' ? 0.08 + index * 0.05 : 0,
-                        ease: smoothEase,
-                      }}
-                    >
-                      <div className="exception-card-head">
-                        <span className="spec-label">Needs partner</span>
-                        <strong>{item.title}</strong>
-                      </div>
-                      <p>{item.reason}</p>
-                    </motion.article>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
+                  <div className="exception-detail-head">
+                    <FlowChip tone="exception">Selected case</FlowChip>
+                    <strong>{filterState === 'done' ? activeException.title : 'Waiting for surfaced cases'}</strong>
+                  </div>
+                  <p>
+                    {filterState === 'done'
+                      ? activeException.reason
+                      : 'Once the filter runs, this panel shows the exact defect or risk that pushed a case into the Partner Red Queue.'}
+                  </p>
+                  <div className="exception-detail-action">
+                    <span className="spec-label">Required action</span>
+                    <p>
+                      {filterState === 'done'
+                        ? activeException.action
+                        : 'No partner action is required until an exception is surfaced.'}
+                    </p>
+                  </div>
+                </motion.article>
+              </div>
             </div>
           </div>
         </RevealSection>
@@ -2044,9 +962,9 @@ export default function Home() {
         <RevealSection className="section roi" id="roi" tone="light">
           <SectionIntro
             index="07"
-            eyebrow="ROI clarity"
-            title="The commercial model stays as explicit as the operating model."
-            body="Move the assumptions and the monthly economics update in place. The math is visible, the break-even point is visible, and the savings per case are visible."
+            eyebrow="ROI calculator"
+            title="Check whether the time you are losing each week already justifies the spend."
+            body="Use your own salary and time assumptions to compare manual admin work against the monthly fee."
           />
           <div className="roi-grid">
             <div className="roi-inputs spec-panel">
@@ -2153,9 +1071,9 @@ export default function Home() {
         <RevealSection className="section pricing" id="pricing" tone="dark">
           <SectionIntro
             index="08"
-            eyebrow="Transparent pricing"
-            title="The infrastructure layer is priced plainly and scales predictably."
-            body="Base plan covers up to 50 active cases. If your live caseload is higher, the overage is visible immediately and the recommendation updates in place."
+            eyebrow="Pricing"
+            title="Simple pricing for small firms."
+            body="GBP 395 per month covers up to 50 active cases, with a minimum 3-month contract. If you run above that, the extra cost is shown clearly."
           />
           <div className="pricing-controls spec-panel">
             <label>
@@ -2205,8 +1123,7 @@ export default function Home() {
               <span className="spec-label">Monthly</span>
               <h3>{formatCurrency(monthlyPrice)}</h3>
               <p>
-                Flat base plan plus {formatCurrency(6)} per additional active case
-                above 50.
+                Pay monthly with a 3-month minimum, plus {formatCurrency(6)} for each active case above 50.
               </p>
               <div className="pricing-specs">
                 <div>Validation gate</div>
@@ -2215,7 +1132,7 @@ export default function Home() {
                 <div>Status cadence</div>
               </div>
               <a className="btn primary" href="#cta">
-                Start monthly
+                Book monthly demo
               </a>
             </motion.article>
 
@@ -2239,7 +1156,7 @@ export default function Home() {
               </AnimatePresence>
               <span className="spec-label">Annual</span>
               <h3>{formatCurrency(annualPrice)}</h3>
-              <p>Two months free at base plan level. Same visible overage structure.</p>
+              <p>Annual plan with two months saved at base level. Minimum 3-month commitment still applies at onboarding. Same overage structure.</p>
               <div className="pricing-specs">
                 <div>Implementation included</div>
                 <div>Rule setup included</div>
@@ -2247,7 +1164,7 @@ export default function Home() {
                 <div>Same support model</div>
               </div>
               <a className="btn secondary" href="#cta">
-                Choose annual
+                Book annual demo
               </a>
             </motion.article>
           </div>
@@ -2260,15 +1177,15 @@ export default function Home() {
             ) : (
               <span className="pill success">Within plan limit</span>
             )}
-            <p>No per-user fees. No per-upload fees. The cost model remains visible.</p>
+            <p>No per-user fees, no per-upload fees, and a minimum 3-month contract.</p>
           </div>
         </RevealSection>
 
         <RevealSection className="section testimonial" id="testimonial" tone="light">
           <SectionIntro
             index="09"
-            eyebrow="Partner proof"
-            title="What changed was not just throughput. It was who had to think about routine case state."
+            eyebrow="What a partner sees"
+            title="The biggest change is that routine case admin stops landing on the partner."
           />
           <motion.blockquote
             className="quote-block"
@@ -2280,12 +1197,8 @@ export default function Home() {
             <p>
               &quot;When the system caught a <mark>blurry passport overnight</mark>
               and got it corrected before the team logged in, we stopped treating
-              it as software and started treating it as <mark>operational capacity</mark>.&quot;
+              it as software and started treating it as <mark>extra delivery capacity</mark>.&quot;
             </p>
-            <footer>
-              <strong>Senior Partner, 12-person London firm</strong>
-              <span>40 active cases | 62% fewer status inquiries | 8-10h recovered weekly</span>
-            </footer>
           </motion.blockquote>
         </RevealSection>
 
@@ -2293,7 +1206,7 @@ export default function Home() {
           <SectionIntro
             index="10"
             eyebrow="FAQ"
-            title="Concrete answers for teams evaluating operational infrastructure, not a generic SaaS tool."
+            title="Straight answers for firms deciding whether this would actually reduce workload."
           />
           <FaqAccordion items={faqItems} />
         </RevealSection>
@@ -2302,12 +1215,12 @@ export default function Home() {
           <div className="cta-panel">
             <div>
               <span className="section-number">11</span>
-              <p className="eyebrow">Switch on the operating layer</p>
-              <h2>Enforce certainty across every live immigration case.</h2>
+              <p className="eyebrow">See if it fits your firm</p>
+              <h2>See how this would work with your current caseload and team size.</h2>
               <p className="body">
-                We map the route rules, wire the validation gate, define the red
-                queue, and start the chase loop without changing the system you
-                already use.
+                We will show you where document chasing, upload checking, and
+                client updates can come off your team without changing the case
+                management system you already use.
               </p>
             </div>
             <div className="cta-actions">
@@ -2315,12 +1228,19 @@ export default function Home() {
                 Book a demo
               </a>
               <a className="btn ghost" href="#system">
-                Review architecture
+                Review the workflow
               </a>
             </div>
           </div>
         </RevealSection>
       </main>
+      <footer className="mini-footer">
+        <p>
+          Built for partner-led UK immigration firms with small teams.
+          CasePilotAI chases evidence, checks uploads, and sends routine client
+          updates alongside your existing case system.
+        </p>
+      </footer>
     </div>
   )
 }
@@ -2376,353 +1296,424 @@ function SectionIntro({
   )
 }
 
-function ArchitectureBoard({
-  config,
+function getFlowTone(tone?: FlowTone) {
+  return tone ?? 'neutral'
+}
+
+function FlowChip({
+  children,
+  tone,
   className,
-  compact = false,
-  showLegend = false,
-  forceActivePaths = [],
 }: {
-  config: DiagramConfig
+  children: ReactNode
+  tone?: FlowTone
   className?: string
-  compact?: boolean
-  showLegend?: boolean
-  forceActivePaths?: string[]
 }) {
-  const reduceMotion = useReducedMotion()
-  const boardId = useId()
-  const boardRef = useRef<HTMLDivElement>(null)
-  const svgRef = useRef<SVGSVGElement>(null)
-  const visible = useInView(boardRef, { once: true, amount: compact ? 0.35 : 0.25 })
-  const [boardWidth, setBoardWidth] = useState(0)
-  const [hoveredPaths, setHoveredPaths] = useState<string[]>([])
-  const [tooltip, setTooltip] = useState<{
-    text: string
-    x: number
-    y: number
-  } | null>(null)
-
-  const activePaths = hoveredPaths.length > 0 ? hoveredPaths : forceActivePaths
-  const viewBoxHeight = Number(config.viewBox.split(' ')[3] ?? 0)
-  const laneHeight = Math.max(viewBoxHeight - 36, 120)
-  const laneBottom = Math.max(viewBoxHeight - 18, 138)
-  const stackedBreakpoint = compact ? 500 : 640
-  const isStacked = boardWidth > 0 && boardWidth < stackedBreakpoint
-
-  useEffect(() => {
-    const node = boardRef.current
-    if (!node || typeof ResizeObserver === 'undefined') return
-
-    const updateWidth = () => setBoardWidth(node.getBoundingClientRect().width)
-    updateWidth()
-
-    const observer = new ResizeObserver(() => updateWidth())
-    observer.observe(node)
-
-    return () => observer.disconnect()
-  }, [])
-
-  const stackedLanes = useMemo(
-    () =>
-      config.lanes.map((lane) => {
-        const nodes = config.nodes
-          .filter((node) => node.lane === lane.id)
-          .sort((left, right) => left.y - right.y || left.x - right.x)
-
-        const routeIds = Array.from(
-          new Set(nodes.flatMap((node) => node.pathIds)),
-        )
-
-        return {
-          ...lane,
-          nodes,
-          routes: config.routes.filter((route) => routeIds.includes(route.id)),
-        }
-      }),
-    [config],
-  )
-
-  const updateTooltip = (
-    event: ReactMouseEvent<SVGElement>,
-    text: string,
-    pathIds: string[],
-  ) => {
-    const svgBounds = svgRef.current?.getBoundingClientRect()
-    if (!svgBounds) return
-
-    const maxX = Math.max(svgBounds.width - 250, 14)
-    const maxY = Math.max(svgBounds.height - 90, 14)
-    const x = Math.min(Math.max(event.clientX - svgBounds.left + 16, 14), maxX)
-    const y = Math.min(Math.max(event.clientY - svgBounds.top + 16, 14), maxY)
-
-    setHoveredPaths(pathIds)
-    setTooltip({ text, x, y })
-  }
-
-  const clearTooltip = () => {
-    setHoveredPaths([])
-    setTooltip(null)
-  }
-
-  if (isStacked) {
-    return (
-      <div
-        ref={boardRef}
-        className={`architecture-board is-stacked ${compact ? 'compact' : ''} ${className ?? ''}`.trim()}
-      >
-        <div className="stacked-board">
-          {stackedLanes.map((lane, laneIndex) => (
-            <div key={lane.id} className="stack-lane">
-              <div className="stack-lane-head">
-                <div>
-                  <span className="spec-label">{lane.label}</span>
-                  <p>{lane.detail}</p>
-                </div>
-                <span className="stack-node-count">
-                  {lane.nodes.length} {lane.nodes.length === 1 ? 'node' : 'nodes'}
-                </span>
-              </div>
-
-              <div className="stack-lane-body">
-                {lane.nodes.map((node) => (
-                  <div
-                    key={node.id}
-                    className={`stack-node stack-node-${node.kind}`}
-                    title={node.tooltip}
-                  >
-                    {node.chip ? (
-                      <span className="stack-node-chip">{node.chip}</span>
-                    ) : null}
-                    <strong>{node.label}</strong>
-                    {node.detail ? <p>{node.detail}</p> : null}
-                  </div>
-                ))}
-              </div>
-
-              {lane.routes.length ? (
-                <div className="stack-route-list" aria-label={`${lane.label} routes`}>
-                  {lane.routes.map((route) => (
-                    <span
-                      key={`${boardId}-${route.id}`}
-                      className={`stack-route-chip route-${route.tone}`}
-                      title={route.tooltip}
-                    >
-                      {route.label}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-
-              {laneIndex < stackedLanes.length - 1 ? (
-                <div className="stack-lane-connector" aria-hidden="true">
-                  <span />
-                </div>
-              ) : null}
-            </div>
-          ))}
-
-          {config.notes?.length ? (
-            <div className="board-notes">
-              {config.notes.map((note) => (
-                <div key={note} className="board-note-item">
-                  <span className="board-dot" />
-                  <p>{note}</p>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {showLegend ? <BoardLegend /> : null}
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div
-      ref={boardRef}
-      className={`architecture-board ${compact ? 'compact' : ''} ${className ?? ''}`.trim()}
-    >
-      <svg ref={svgRef} viewBox={config.viewBox} role="presentation">
-        {config.lanes.map((lane) => (
-          <g key={lane.id}>
-            <rect
-              className="diagram-lane-band"
-              x={lane.x}
-              y="18"
-              width={lane.width}
-              height={laneHeight}
-            />
-            <line
-              x1={lane.x + lane.width}
-              y1="18"
-              x2={lane.x + lane.width}
-              y2={laneBottom}
-              className="diagram-lane-divider"
-            />
-            <text x={lane.x + 18} y="40" className="diagram-lane-label">
-              {lane.label}
-            </text>
-            <text x={lane.x + 18} y="58" className="diagram-lane-detail">
-              {lane.detail}
-            </text>
-          </g>
-        ))}
+    <span className={`flow-chip tone-${getFlowTone(tone)} ${className ?? ''}`.trim()}>
+      {children}
+    </span>
+  )
+}
 
-        {config.routes.map((route, index) => (
-          <g key={route.id}>
-            <motion.path
-              id={route.id}
-              className={`flow-route flow-route-${route.tone} ${
-                activePaths.includes(route.id) ? 'active' : ''
-              }`}
-              d={route.d}
-              initial={{ opacity: 0, pathLength: 0 }}
-              animate={visible ? { opacity: 1, pathLength: 1 } : undefined}
-              transition={{
-                duration: compact ? 0.65 : 0.92,
-                delay: compact ? 0.04 + index * 0.04 : 0.08 + index * 0.08,
-                ease: smoothEase,
-              }}
-              onMouseEnter={(event) => updateTooltip(event, route.tooltip, [route.id])}
-              onMouseMove={(event) => updateTooltip(event, route.tooltip, [route.id])}
-              onMouseLeave={clearTooltip}
-            />
-            <text x={route.labelX} y={route.labelY} className={`route-label route-${route.tone}`}>
-              {route.label}
-            </text>
-          </g>
-        ))}
+function FlowCard({
+  step,
+  className,
+}: {
+  step: FlowStep
+  className?: string
+}) {
+  return (
+    <article className={`flow-card tone-${getFlowTone(step.tone)} ${className ?? ''}`.trim()}>
+      {step.chip ? <FlowChip tone={step.tone}>{step.chip}</FlowChip> : null}
+      <strong>{step.label}</strong>
+      {step.detail ? <p>{step.detail}</p> : null}
+    </article>
+  )
+}
 
-        {config.marks?.map((mark) => (
-          <text
-            key={mark.id}
-            x={mark.x}
-            y={mark.y}
-            className={`diagram-mark ${mark.tone ? `route-${mark.tone}` : ''}`}
-          >
-            {mark.text}
-          </text>
-        ))}
+function FlowArrow({
+  tone,
+  vertical = false,
+  className,
+}: {
+  tone?: FlowTone
+  vertical?: boolean
+  className?: string
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`flow-arrow ${vertical ? 'vertical' : 'horizontal'} tone-${getFlowTone(
+        tone,
+      )} ${className ?? ''}`.trim()}
+    />
+  )
+}
 
-        {config.nodes.map((node, index) => {
-          const isActive = node.pathIds.some((pathId) => activePaths.includes(pathId))
-          return (
-            <motion.g
-              key={node.id}
-              transform={`translate(${node.x} ${node.y})`}
-              className={`diagram-node diagram-node-${node.kind} ${isActive ? 'active' : ''}`}
-              initial={{ opacity: 0 }}
-              animate={visible ? { opacity: 1 } : undefined}
-              transition={{
-                duration: compact ? 0.34 : 0.44,
-                delay: compact ? 0.08 + index * 0.05 : 0.1 + index * 0.08,
-                ease: smoothEase,
-              }}
-              onMouseEnter={(event) => updateTooltip(event, node.tooltip, node.pathIds)}
-              onMouseMove={(event) => updateTooltip(event, node.tooltip, node.pathIds)}
-              onMouseLeave={clearTooltip}
-            >
-              <rect width={node.width} height={node.height} rx="4" ry="4" />
-              {node.chip ? (
-                <text x="16" y="24" className="diagram-node-chip">
-                  {node.chip}
-                </text>
-              ) : null}
-              <text x="16" y={node.chip ? 48 : 34} className="diagram-node-title">
-                {node.label}
-              </text>
-              {node.detail ? (
-                <text x="16" y={node.chip ? 68 : 54} className="diagram-node-detail">
-                  {node.detail}
-                </text>
-              ) : null}
-            </motion.g>
-          )
-        })}
-
-        {!reduceMotion && visible
-          ? config.routes
-              .filter((route) => route.packet)
-              .map((route) => (
-                <PacketBadge key={route.id} route={route} />
-              ))
-          : null}
-      </svg>
-
-      {config.notes?.length ? (
-        <div className="board-notes">
-          {config.notes.map((note) => (
-            <div key={note} className="board-note-item">
-              <span className="board-dot" />
-              <p>{note}</p>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {showLegend ? <BoardLegend /> : null}
-
-      <AnimatePresence>
-        {tooltip ? (
-          <motion.div
-            className="diagram-tooltip"
-            style={{ left: tooltip.x, top: tooltip.y }}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.18 }}
-          >
-            {tooltip.text}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+function SectionSpecNote({
+  children,
+  tone,
+  className,
+}: {
+  children: ReactNode
+  tone?: FlowTone
+  className?: string
+}) {
+  return (
+    <div className={`section-spec-note tone-${getFlowTone(tone)} ${className ?? ''}`.trim()}>
+      <span className="section-spec-dot" />
+      <p>{children}</p>
     </div>
   )
 }
 
-function PacketBadge({ route }: { route: DiagramRoute }) {
-  if (!route.packet) return null
-
-  const width = Math.max(route.packet.label.length * 7 + 26, 74)
-
+function FlowSequence({
+  steps,
+  className,
+}: {
+  steps: FlowStep[]
+  className?: string
+}) {
   return (
-    <g className={`packet-badge packet-${route.tone}`}>
-      <rect x={-width / 2} y={-12} width={width} height={24} rx="12" ry="12" />
-      <text x="0" y="4" textAnchor="middle">
-        {route.packet.label}
-      </text>
-      <animateMotion
-        dur={`${route.packet.duration ?? 5.2}s`}
-        begin={`${route.packet.delay}s`}
-        repeatCount="indefinite"
-        rotate="auto"
-      >
-        <mpath href={`#${route.id}`} xlinkHref={`#${route.id}`} />
-      </animateMotion>
-    </g>
+    <div className={`flow-sequence ${className ?? ''}`.trim()}>
+      {steps.map((step, index) => (
+        <div key={`${step.label}-${index}`} className="flow-sequence-part">
+          <FlowCard step={step} />
+          {index < steps.length - 1 ? <FlowArrow tone={step.tone} /> : null}
+        </div>
+      ))}
+    </div>
   )
 }
 
-function BoardLegend() {
+function HeroOperatingModel({
+  mainSteps,
+  correctionBranch,
+  exceptionBranch,
+  notes,
+}: {
+  mainSteps: FlowStep[]
+  correctionBranch: FlowBranch
+  exceptionBranch: FlowBranch
+  notes: string[]
+}) {
   return (
-    <div className="board-legend">
-      <div className="legend-item">
-        <span className="legend-line base" />
-        <span>Core route</span>
+    <div className="spec-shell hero-operating-model">
+      <div className="hero-main-strip">
+        <FlowSequence steps={mainSteps} className="hero-main-sequence" />
       </div>
-      <div className="legend-item">
-        <span className="legend-line success" />
-        <span>Verified progression</span>
+      <div className="hero-branch-grid">
+        <section className="branch-panel tone-exception">
+          <div className="branch-panel-head">
+            <div>
+              <FlowChip tone={correctionBranch.tone}>{correctionBranch.title}</FlowChip>
+              <p>{correctionBranch.detail}</p>
+            </div>
+          </div>
+          <FlowSequence steps={correctionBranch.steps} className="branch-sequence" />
+        </section>
+        <section className="branch-panel tone-exception branch-panel-compact">
+          <div className="branch-panel-head">
+            <div>
+              <FlowChip tone={exceptionBranch.tone}>{exceptionBranch.title}</FlowChip>
+              <p>{exceptionBranch.detail}</p>
+            </div>
+          </div>
+          <div className="branch-focus-card">
+            <FlowCard step={exceptionBranch.steps[0]} className="branch-single-card" />
+          </div>
+        </section>
       </div>
-      <div className="legend-item">
-        <span className="legend-line alert" />
-        <span>Exception path</span>
+      <div className="spec-note-grid">
+        {notes.map((note) => (
+          <SectionSpecNote key={note}>{note}</SectionSpecNote>
+        ))}
       </div>
-      <div className="legend-item">
-        <span className="legend-line loop" />
-        <span>Correction loop</span>
+    </div>
+  )
+}
+
+function SystemTriageStrip({
+  sourceSteps,
+  routineStep,
+  exceptionStep,
+  notes,
+}: {
+  sourceSteps: FlowStep[]
+  routineStep: FlowStep
+  exceptionStep: FlowStep
+  notes: string[]
+}) {
+  return (
+    <div className="spec-shell system-strip">
+      <FlowSequence steps={sourceSteps} className="system-strip-sequence" />
+      <div className="system-split-grid">
+        <section className="system-output-panel tone-verified">
+          <FlowChip tone="verified">Routine output</FlowChip>
+          <FlowArrow tone="verified" vertical />
+          <FlowCard step={routineStep} className="system-output-card" />
+        </section>
+        <section className="system-output-panel tone-exception">
+          <FlowChip tone="exception">Exception output</FlowChip>
+          <FlowArrow tone="exception" vertical />
+          <FlowCard step={exceptionStep} className="system-output-card" />
+        </section>
       </div>
+      <div className="spec-note-grid">
+        {notes.map((note) => (
+          <SectionSpecNote key={note}>{note}</SectionSpecNote>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SystemValidationStrip({
+  mainSteps,
+  correctionBranch,
+  notes,
+}: {
+  mainSteps: FlowStep[]
+  correctionBranch: FlowBranch
+  notes: string[]
+}) {
+  return (
+    <div className="spec-shell system-strip">
+      <FlowSequence steps={mainSteps} className="system-strip-sequence" />
+      <section className="branch-panel tone-exception validation-branch-panel">
+        <div className="branch-panel-head">
+          <div>
+            <FlowChip tone={correctionBranch.tone}>{correctionBranch.title}</FlowChip>
+            <p>{correctionBranch.detail}</p>
+          </div>
+        </div>
+        <FlowSequence steps={correctionBranch.steps} className="branch-sequence" />
+      </section>
+      <div className="spec-note-grid">
+        {notes.map((note) => (
+          <SectionSpecNote key={note}>{note}</SectionSpecNote>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ComparisonStrips({
+  manualSteps,
+  alignedSteps,
+  manualNotes,
+  alignedNotes,
+}: {
+  manualSteps: FlowStep[]
+  alignedSteps: FlowStep[]
+  manualNotes: string[]
+  alignedNotes: string[]
+}) {
+  return (
+    <div className="comparison-strip-stack">
+      <motion.article
+        className="comparison-strip comparison-strip-manual"
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.35 }}
+        transition={{ duration: 0.48, ease: smoothEase }}
+      >
+        <div className="comparison-strip-head">
+          <div>
+            <FlowChip tone="manual">Manual state</FlowChip>
+            <h3>Routine admin lands on the firm.</h3>
+          </div>
+          <p>There is no owned gate, no routed intake, and no maintained update cadence.</p>
+        </div>
+        <FlowSequence steps={manualSteps} className="comparison-sequence" />
+        <div className="spec-note-grid comparison-note-grid">
+          {manualNotes.map((note) => (
+            <SectionSpecNote key={note} tone="manual">
+              {note}
+            </SectionSpecNote>
+          ))}
+        </div>
+      </motion.article>
+      <motion.article
+        className="comparison-strip comparison-strip-aligned"
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.35 }}
+        transition={{ duration: 0.52, delay: 0.08, ease: smoothEase }}
+      >
+        <div className="comparison-strip-head">
+          <div>
+            <FlowChip tone="verified">CasePilotAI state</FlowChip>
+            <h3>Routine admin stays in the operating layer.</h3>
+          </div>
+          <p>The gate, the sync point, and the client update cadence are controlled in one system.</p>
+        </div>
+        <FlowSequence steps={alignedSteps} className="comparison-sequence" />
+        <div className="spec-note-grid comparison-note-grid">
+          {alignedNotes.map((note) => (
+            <SectionSpecNote key={note}>{note}</SectionSpecNote>
+          ))}
+        </div>
+      </motion.article>
+    </div>
+  )
+}
+
+function QueueSplitPanel({
+  filterState,
+  cases,
+  activeExceptionId,
+  onSelectException,
+}: {
+  filterState: 'idle' | 'scanning' | 'done'
+  cases: Array<{
+    id: string
+    title: string
+    route: string
+    status: 'routine' | 'exception'
+    summary: string
+  }>
+  activeExceptionId: string | null
+  onSelectException: (id: string) => void
+}) {
+  const routineCases = cases.filter((item) => item.status === 'routine')
+  const exceptionCases = cases.filter((item) => item.status === 'exception')
+  const routineWidth =
+    filterState === 'done' ? '78%' : filterState === 'scanning' ? '66%' : '52%'
+  const exceptionWidth =
+    filterState === 'done' ? '22%' : filterState === 'scanning' ? '34%' : '48%'
+  const statusLabel =
+    filterState === 'done'
+      ? '5 exceptions surfaced'
+      : filterState === 'scanning'
+        ? 'Filtering live portfolio'
+        : '23 cases waiting for triage'
+
+  return (
+    <div className={`queue-split-panel state-${filterState}`}>
+      <div className="queue-count-row">
+        <div className="queue-count-copy">
+          <span className="spec-label">Live queue filter</span>
+          <strong>{statusLabel}</strong>
+          <p>
+            Every case enters the same filter. Routine matters stay in motion.
+            Only exceptions remain visible for partner review.
+          </p>
+        </div>
+        <div className="queue-count-meter" aria-hidden="true">
+          {cases.map((item) => (
+            <span
+              key={item.id}
+              className={`queue-count-segment ${item.status}`}
+            />
+          ))}
+          <span className="queue-scan-line" />
+        </div>
+      </div>
+
+      <div className="queue-case-stage">
+        <div className="queue-case-stage-head">
+          <span className="spec-label">Live portfolio</span>
+          <p>Click a surfaced exception after the filter runs.</p>
+        </div>
+        <div className="queue-case-grid">
+          {cases.map((item, index) => {
+            const isSelectable = filterState === 'done' && item.status === 'exception'
+            const isActive = activeExceptionId === item.id
+            return (
+              <motion.button
+                key={item.id}
+                type="button"
+                className={`queue-case-chip tone-${item.status === 'exception' ? 'exception' : 'neutral'} ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  if (isSelectable) onSelectException(item.id)
+                }}
+                disabled={!isSelectable}
+                initial={false}
+                animate={{
+                  opacity:
+                    filterState === 'idle'
+                      ? 1
+                      : filterState === 'scanning'
+                        ? item.status === 'exception'
+                          ? 0.85
+                          : 0.55
+                        : item.status === 'exception'
+                          ? 1
+                          : 0.28,
+                  scale:
+                    filterState === 'done' && item.status === 'exception'
+                      ? isActive
+                        ? 1.02
+                        : 1
+                      : 1,
+                  y:
+                    filterState === 'done' && item.status === 'exception'
+                      ? 0
+                      : filterState === 'done'
+                        ? -2
+                        : 0,
+                }}
+                transition={{
+                  duration: 0.26,
+                  delay: filterState === 'scanning' ? index * 0.015 : 0,
+                  ease: smoothEase,
+                }}
+              >
+                <span>{item.title}</span>
+                <small>{filterState === 'done' ? item.summary : item.route}</small>
+              </motion.button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="spec-shell queue-filter-strip">
+        <FlowSequence steps={queueFilterSteps} className="system-strip-sequence" />
+        <div className="queue-output-grid">
+          <motion.article
+            className="queue-output-card tone-verified"
+            animate={{ flexBasis: routineWidth, opacity: filterState === 'idle' ? 0.72 : 1 }}
+            transition={{ duration: 0.4, ease: smoothEase }}
+          >
+            <FlowChip tone="verified">Routine output</FlowChip>
+            <strong>{routineCases.length} cases stay in flow</strong>
+            <p>Document chasing, re-uploads, and client updates continue automatically.</p>
+          </motion.article>
+          <motion.article
+            className="queue-output-card tone-exception"
+            animate={{ flexBasis: exceptionWidth, opacity: filterState === 'done' ? 1 : 0.82 }}
+            transition={{ duration: 0.4, ease: smoothEase }}
+          >
+            <FlowChip tone="exception">Partner output</FlowChip>
+            <strong>{exceptionCases.length} cases enter the red queue</strong>
+            <p>Only files with missing evidence, failed checks, or conflicts stay visible for review.</p>
+          </motion.article>
+        </div>
+        <div className="spec-note-grid">
+          <SectionSpecNote>The red queue is an output of the filter, not a second manual backlog.</SectionSpecNote>
+          <SectionSpecNote>Routine cases keep moving without creating another partner inbox.</SectionSpecNote>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TimelineSteps({ steps }: { steps: TimelineStep[] }) {
+  return (
+    <div className="timeline-step-strip">
+      {steps.map((step, stepIndex) => (
+        <div key={`${step.label}-${stepIndex}`} className="timeline-step-part">
+          <div className={`timeline-step tone-${getFlowTone(step.tone)}`}>
+            {step.chip ? <span className="timeline-step-chip">{step.chip}</span> : null}
+            <strong>{step.label}</strong>
+          </div>
+          {stepIndex < steps.length - 1 ? (
+            <FlowArrow tone={step.tone} className="timeline-flow-arrow" />
+          ) : null}
+        </div>
+      ))}
     </div>
   )
 }
@@ -2794,7 +1785,7 @@ function TimelineCard({
           </div>
           <p>{stage.detail}</p>
         </div>
-        <ArchitectureBoard config={stage.board} compact />
+        <TimelineSteps steps={stage.steps} />
       </div>
     </motion.article>
   )
