@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'CasePilotAI | Operational Automation Layer',
+  title: 'Arbiter | Operational Automation Layer',
   description:
-    'CasePilotAI is the automation layer for UK immigration firms: document chasing, validation gates, and partner exception routing.',
+    'Arbiter is the automation layer for UK immigration firms: document chasing, validation gates, and partner exception routing.',
 }
 
 export default function RootLayout({

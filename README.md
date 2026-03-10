@@ -1,6 +1,6 @@
-# CasePilotAI Marketing Site
+# Arbiter Marketing Site
 
-Next.js App Router build for the CasePilotAI landing page.
+Next.js App Router build for the Arbiter landing page.
 
 ## Development
 

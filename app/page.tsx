@@ -1,5 +1,6 @@
 'use client'
 
+import { AnimatedHero } from '../components/ui/animated-hero'
 import {
   AnimatePresence,
   motion,
@@ -47,6 +48,15 @@ type TimelineStage = {
 }
 
 const smoothEase: [number, number, number, number] = [0.16, 1, 0.3, 1]
+const brandName = 'Arbiter'
+
+const heroPainPoints = [
+  'document chasing',
+  'failed uploads',
+  'client update emails',
+  'routine follow-up',
+  'WhatsApp handoffs',
+]
 
 const problemCards = [
   {
@@ -72,7 +82,7 @@ const faqItems = [
   {
     question: 'Does this replace my case management tool?',
     answer:
-      'No. CasePilotAI works alongside the case management system you already use. It handles the chasing, upload checks, and routine client updates around it.',
+      `${brandName} works alongside the case management system you already use. It handles the chasing, upload checks, and routine client updates around it.`,
   },
   {
     question: 'What counts as an exception?',
@@ -391,7 +401,7 @@ const timelineStages: TimelineStage[] = [
     day: 'Day 0',
     title: 'Case initialized',
     detail:
-      'CasePilotAI maps the route, defines the evidence list, and opens the chase path before the case leaves intake.',
+      `${brandName} maps the route, sets the evidence list, and opens the chase path before the case leaves intake.`,
     chip: 'INIT',
     steps: [
       { chip: 'FIRM', label: 'Case opened' },
@@ -558,8 +568,11 @@ export default function Home() {
     <div className="page">
       <header className="nav">
         <div className="brand">
-          <span className="dot" />
-          <span>CasePilotAI</span>
+          <span className="brand-mark" aria-hidden="true">
+            <span className="brand-mark-core" />
+            <span className="brand-mark-stem" />
+          </span>
+          <span>{brandName}</span>
         </div>
         <nav className="nav-links">
           <a href="#system">System</a>
@@ -595,23 +608,17 @@ export default function Home() {
               >
                 <div className="hero-kicker">
                   <span className="section-number">00</span>
-                  <p className="eyebrow">For small UK immigration firms</p>
+                  <p className="eyebrow">For partner-led UK immigration firms</p>
                 </div>
-                <h1>Take document chasing, upload checking, and routine client updates off your team&apos;s desk.</h1>
-                <p className="lead">
-                  Built for partner-led UK immigration firms, CasePilotAI sits
-                  alongside your case system, chases evidence, blocks bad
-                  uploads before staff review them, and keeps clients updated
-                  automatically.
-                </p>
-                <div className="hero-actions">
-                  <a className="btn primary" href="#cta">
-                    Book a demo
-                  </a>
-                  <a className="btn ghost" href="#system">
-                    See how it works
-                  </a>
-                </div>
+                <AnimatedHero
+                  headlineStart="Stop losing fee-earner time to"
+                  rotatingPhrases={heroPainPoints}
+                  body={`${brandName} gives small UK immigration firms one place to chase missing evidence, block unusable uploads, and send routine client updates before they hit the partner inbox.`}
+                  primaryCtaLabel="Book a demo"
+                  primaryHref="#cta"
+                  secondaryCtaLabel="See how it works"
+                  secondaryHref="#system"
+                />
               </motion.div>
 
               <motion.div
@@ -760,7 +767,7 @@ export default function Home() {
             index="03"
             eyebrow="Before and after"
             title="Without a proper delivery layer, routine case work keeps landing on the team."
-            body="Compare the manual setup with the CasePilotAI setup. The difference is who ends up doing the routine work."
+            body={`Compare the manual setup with ${brandName}. The difference is who ends up doing the routine work.`}
           />
           <div className="comparison-layout">
             <div className="comparison-copy">
@@ -1023,7 +1030,7 @@ export default function Home() {
                 </div>
                 <div className="bar">
                   <div className="bar-label">
-                    <span>CasePilotAI monthly cost</span>
+                    <span>{brandName} monthly cost</span>
                     <strong>{formatCurrency(aiMonthly)}</strong>
                   </div>
                   <div className="bar-track">
@@ -1237,7 +1244,7 @@ export default function Home() {
       <footer className="mini-footer">
         <p>
           Built for partner-led UK immigration firms with small teams.
-          CasePilotAI chases evidence, checks uploads, and sends routine client
+          {brandName} chases evidence, checks uploads, and sends routine client
           updates alongside your existing case system.
         </p>
       </footer>
@@ -1544,7 +1551,7 @@ function ComparisonStrips({
       >
         <div className="comparison-strip-head">
           <div>
-            <FlowChip tone="verified">CasePilotAI state</FlowChip>
+            <FlowChip tone="verified">{brandName} state</FlowChip>
             <h3>Routine admin stays in the operating layer.</h3>
           </div>
           <p>The gate, the sync point, and the client update cadence are controlled in one system.</p>
@@ -1592,6 +1599,47 @@ function QueueSplitPanel({
 
   return (
     <div className={`queue-split-panel state-${filterState}`}>
+      <div className="queue-mobile-summary">
+        <div className="queue-mobile-head">
+          <span className="spec-label">Mobile queue view</span>
+          <strong>{statusLabel}</strong>
+          <p>
+            Routine cases disappear from partner view. Surfaced exceptions stay selectable below.
+          </p>
+        </div>
+        <div className="queue-mobile-stats">
+          <article className="queue-mobile-stat tone-verified">
+            <FlowChip tone="verified">Routine</FlowChip>
+            <strong>{routineCases.length}</strong>
+            <p>Cases remain auto-handled</p>
+          </article>
+          <article className="queue-mobile-stat tone-exception">
+            <FlowChip tone="exception">Exceptions</FlowChip>
+            <strong>{exceptionCases.length}</strong>
+            <p>Cases stay visible for partner review</p>
+          </article>
+        </div>
+        <div className="queue-mobile-case-list">
+          {exceptionCases.map((item) => {
+            const isActive = activeExceptionId === item.id
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={`queue-mobile-case ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  if (filterState === 'done') onSelectException(item.id)
+                }}
+                disabled={filterState !== 'done'}
+              >
+                <span>{item.title}</span>
+                <small>{filterState === 'done' ? 'Surfaced exception' : item.route}</small>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="queue-count-row">
         <div className="queue-count-copy">
           <span className="spec-label">Live queue filter</span>

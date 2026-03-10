@@ -400,7 +400,7 @@ button {
 }
 
 .hero-shell {
-  padding-top: calc(var(--space-10) + 20px);
+  padding-top: calc(var(--space-8) + 16px);
   padding-bottom: var(--space-10);
 }
 
@@ -415,7 +415,7 @@ button {
 }
 
 .hero-copy-centered {
-  min-height: calc(100vh - 180px);
+  min-height: calc(100svh - 240px);
   margin-inline: auto;
   display: flex;
   flex-direction: column;
@@ -441,6 +441,56 @@ button {
   margin-top: var(--space-2);
   font-size: 18px;
   color: rgba(255, 255, 255, 0.78);
+}
+
+.animated-hero {
+  width: min(960px, 100%);
+}
+
+.animated-hero-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12em;
+  margin: 0;
+  max-width: 16ch;
+}
+
+.animated-hero-line {
+  display: block;
+}
+
+.animated-hero-line-rotator {
+  width: min(12ch, 100%);
+  color: var(--accent-primary);
+}
+
+.animated-hero-rotator-shell {
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+.animated-hero-rotator-sizer,
+.animated-hero-phrase {
+  grid-area: 1 / 1;
+  display: block;
+}
+
+.animated-hero-rotator-sizer {
+  visibility: hidden;
+}
+
+.animated-hero-phrase {
+  color: var(--accent-primary);
+}
+
+.animated-hero-body {
+  margin-inline: auto;
+}
+
+.animated-hero-actions {
+  margin-top: var(--space-3);
 }
 
 .hero-actions {
@@ -826,6 +876,10 @@ button {
 
 .queue-split-panel {
   gap: 20px;
+}
+
+.queue-mobile-summary {
+  display: none;
 }
 
 .queue-side {
@@ -1838,6 +1892,90 @@ input[type='range']::-moz-range-thumb {
   padding: 16px;
 }
 
+.queue-mobile-head {
+  display: grid;
+  gap: 10px;
+}
+
+.queue-mobile-head strong {
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--flow-text);
+}
+
+.queue-mobile-head p,
+.queue-mobile-stat p,
+.queue-mobile-case small {
+  margin: 0;
+  color: var(--flow-muted);
+  line-height: 1.5;
+}
+
+.queue-mobile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.queue-mobile-stat {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--flow-border);
+  background: var(--flow-surface);
+}
+
+.queue-mobile-stat strong {
+  font-size: 28px;
+  line-height: 1;
+  color: var(--flow-text);
+}
+
+.queue-mobile-stat.tone-verified {
+  border-left: 3px solid var(--flow-verified);
+}
+
+.queue-mobile-stat.tone-exception {
+  border-left: 3px solid var(--flow-exception);
+}
+
+.queue-mobile-case-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.queue-mobile-case {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--flow-border);
+  background: var(--flow-surface);
+  text-align: left;
+  color: var(--flow-text);
+}
+
+.queue-mobile-case span {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.queue-mobile-case.active {
+  border-color: var(--flow-exception);
+  box-shadow: inset 0 0 0 1px var(--flow-exception);
+}
+
+.queue-mobile-case:disabled {
+  opacity: 0.58;
+  cursor: default;
+}
+
+.queue-mobile-case:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 @media (max-width: 1200px) {
 
   .hero-branch-grid,
@@ -2099,6 +2237,10 @@ input[type='range']::-moz-range-thumb {
     font-size: 17px;
   }
 
+  .animated-hero-line-rotator {
+    width: min(13ch, 100%);
+  }
+
   .hero-panel-stage {
     min-height: auto;
   }
@@ -2192,6 +2334,15 @@ input[type='range']::-moz-range-thumb {
     line-height: 1.7;
   }
 
+  .animated-hero-title {
+    gap: 0.08em;
+    max-width: none;
+  }
+
+  .animated-hero-line-rotator {
+    width: 100%;
+  }
+
   .hero-kicker {
     flex-direction: column;
     gap: 10px;
@@ -2218,6 +2369,24 @@ input[type='range']::-moz-range-thumb {
   .hero-panel-head,
   .hero-panel-footer {
     padding: 18px 20px;
+  }
+
+  .queue-mobile-summary {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid var(--flow-border);
+    background: var(--flow-subtle);
+  }
+
+  .queue-mobile-case-list {
+    grid-template-columns: 1fr;
+  }
+
+  .queue-count-row,
+  .queue-case-stage,
+  .queue-filter-strip {
+    display: none;
   }
 
   .proof-cell,
