@@ -128,11 +128,43 @@ button {
   letter-spacing: 0.04em;
 }
 
-.brand .dot {
-  width: 10px;
-  height: 10px;
+.brand-mark {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.brand-mark-core {
+  position: absolute;
+  inset: 4px;
   border-radius: 50%;
   background: var(--accent-primary);
+}
+
+.brand-mark-stem {
+  position: absolute;
+  left: 50%;
+  top: 3px;
+  width: 1px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  transform: translateX(-50%);
+}
+
+.brand-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.brand-byline {
+  font-size: 0.82em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.74);
 }
 
 .nav-links {

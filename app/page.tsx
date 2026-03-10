@@ -572,7 +572,10 @@ export default function Home() {
             <span className="brand-mark-core" />
             <span className="brand-mark-stem" />
           </span>
-          <span>{brandName}</span>
+          <span className="brand-wordmark">
+            <span>{brandName}</span>
+            <span className="brand-byline">by the4five</span>
+          </span>
         </div>
         <nav className="nav-links">
           <a href="#system">System</a>
