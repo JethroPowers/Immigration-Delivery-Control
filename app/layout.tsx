@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Arbiter | Operational Automation Layer',
+  title: 'Arbiter | Immigration Operations Redesign',
   description:
-    'Arbiter is the automation layer for UK immigration firms: document chasing, validation gates, and partner exception routing.',
+    'Arbiter helps UK immigration firms tighten case progression, document control, handoffs, and partner visibility inside the systems they already use.',
 }
 
 export default function RootLayout({
